@@ -1,0 +1,37 @@
+A quantitative approach for the comparison of additive local explanation methods
+
+Datasets
+- Constraints
+	- at most 13 features
+	- at most 10,000 instances
+	- classification tasks
+
+Models
+- Logistic Regression
+- Support Vector Machines
+- Random Forests
+Gradient Boosted Machines
+
+Metrics
+- Mean Computation Time Per Instance
+- Quantification of average deviation of the influence
+- Area under Cumulative Feature Importance Curve
+- Robustness
+- Readability
+- Clusterability
+
+
+Methodology
+1. Get all datasets that match criteria
+2. Run the XAI Algorithm on all datasets
+3. Run the Swarm XAI Algorithm on all the datasets
+4. Use the 6 metrics
+
+Problems:
+1. the paper does specify the actual datasets used for the experiment
+	- one approach is limit the datasets by date but I am not sure how to do that (BEST)
+		- Best Approach: papers code simply calls the OpenML Library and sets parameters
+			- Will try to do the same thing except sort by dates as well
+	- another and easier approach is to include the more recent datasets as well
+
+

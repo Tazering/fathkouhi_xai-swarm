@@ -34,15 +34,23 @@ def complete_method_error(n, p, d, exp_influence, comp_influence):
 """
 Metric 3: Area under curve
 """
+def auc():
+    return None
 
 """
 Metric 4: Robustness
 """
+def robustness():
+    return None
 
 """
 Metric 5: Readability
 """
+def readability():
+    return None
 
 """
 Metric 6: Clusterability 
 """
+def clusterability():
+    return None
