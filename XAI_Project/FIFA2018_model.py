@@ -5,58 +5,87 @@ import pandas as pd
 import XAI_Swarm_Opt
 from XAI import XAI
 from colorama import Style, Fore
-Data = pd.read_csv('FIFA 2018 Statistics.csv')
 
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+import data_tools as data_tools
 
-# grabs the names of features
-features_name = [i for i in Data.columns if Data[i].dtype == np.int64]
+#############################################
+#   FETCHING THE DATA
+#############################################
+
+# grab the data
+fifa_data = pd.read_csv('FIFA 2018 Statistics.csv')
+
+# describe the data
+print(fifa_data.describe)
+print("\n")
+
+# grabs the names of numerical features
+numerical_features = [i for i in fifa_data.columns if fifa_data[i].dtype == np.int64]
+
+# print the features
+data_tools.print_variable("numerical_features", numerical_features)
 
 # creates the dataset
-X = Data[features_name]
-y = Data['Man of the Match'] == 'Yes'
+X = fifa_data[numerical_features]
+y = fifa_data['Man of the Match'] == 'Yes'
 
 # splits the data into training and test set
 x_train, x_val, y_train, y_val = train_test_split(X, y)
 
-# print(x_val.head())
+###################################################
+#   RUN A MODEL
+###################################################
 
 # run A MODEL for testing
 model = RandomForestClassifier().fit(x_train, y_train)
 
+###################################################
+#   GRAB A SAMPLE
+###################################################
 
-row_number = 2
-sample = x_val.iloc[row_number]
-sample_y = y_val.iloc[row_number]
+# grab a sample 
+sample_number = 2
+
+data_tools.print_variable("x_val", x_val)
+
+# details of a single datapoint
+sample = x_val.iloc[sample_number]
+sample_y = y_val.iloc[sample_number]
 sample_y = 1 if sample_y == True else 0
 sample = sample.values.reshape(1, -1)
 
-
+data_tools.print_variable("sample", sample)
 
 # printing stuff
-print(Style.BRIGHT + Fore.LIGHTCYAN_EX + 'FIFA2018 Dataset:')
-print(Style.BRIGHT + Fore.CYAN + 'X: ', Style.BRIGHT + Fore.LIGHTRED_EX + str(sample))
-print(Style.BRIGHT + Fore.CYAN + 'y: ', Style.BRIGHT + Fore.LIGHTRED_EX + str(sample_y),'\n')
-print(Style.BRIGHT + Fore.CYAN + 'Blackbox model prediction: ', Style.BRIGHT + Fore.YELLOW + str(model.predict_proba(sample)),'\n')
+data_tools.print_dataset_sample("FIFA2018 Dataset", sample, sample_y, model)
 
+# converts sample to a single list
+sample_size = np.size(sample[0])
 
-# creates an of zeros 
-S = np.zeros(np.size(sample[0]))
-for i in range(np.size(sample[0])):
-    S[i] = sample[0][i]
+# S = np.zeros(sample_size)
+# for i in range(sample_size):
+#     S[i] = sample[0][i]
+# data_tools.print_variable("S", S)
+
+sample_list = sample[0]
+
+data_tools.print_variable("sample_list", sample_list)
+
 
 # def __init__(self, model_predict, sample, size, no_pso, no_iteration, lb, up):
 # A = XAI(max(model.predict_proba(sample)[0]), S, np.size(S), 50, 4000, -1, 1, features_name).XAI_swarm_Invoke()
 
+###################################################
+#   RUN XAI
+###################################################
+
 temp_categorical = {"Begin_Categorical": 5, "Categorical_Index": [1, 2]}
 
-for i in range(5):
-    A = XAI_Swarm_Opt.XAI(max(model.predict_proba(sample)[0]), S, np.size(S), 50, 20,30, -1, 1, features_name, temp_categorical, True).XAI_swarm_Invoke()
-
-
-print("\n\n\nPast this point \n\n\n")
+for i in range(3):
+    A = XAI_Swarm_Opt.XAI(max(model.predict_proba(sample)[0]), sample_list, np.size(sample_list), 50, 20,30, -1, 1, numerical_features, temp_categorical, True).XAI_swarm_Invoke()
 
 # calculate times with xai
 import shap
@@ -77,7 +106,7 @@ print('Tree shap time: ', (t2 - t1) * 10.0**-9)
 
 # use lime
 import lime.lime_tabular
-num_features = np.size(S)
+num_features = np.size(sample_list)
 t1 = time.time_ns()
 explainer = lime.lime_tabular.LimeTabularExplainer(x_train.values)
 explainer = explainer.explain_instance(S,model.predict_proba, num_features = num_features)

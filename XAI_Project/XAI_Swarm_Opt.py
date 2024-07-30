@@ -5,11 +5,23 @@ from colorama import Fore, Style
 import SwarmPackagePy
 import matplotlib.pyplot as plt
 
+"""
+size: (int) 
+model_predict:
+loss:
+sample:
+optimizer_param:
+features_list:
+categorical:
+categorical_status:
+opt
+"""
+
 class XAI:
 
     # initialization
     def __init__(self, model_predict, sample, size, no_pso, no_iteration, no_generation, lb, up, features_list, Categorical, Categorical_Status):
-        self.size = size + 1
+        self.size = size + 1 
         self.model_predict = model_predict
         self.loss = 0
         self.sample = np.array(np.copy(sample).tolist() + [1])
@@ -66,7 +78,8 @@ class XAI:
         min_cost = np.inf
         best_pos = None
 
-        for i in range(self.optimizer_param['no_generation']): # iterate through generations
+        # iterate through generations
+        for i in range(self.optimizer_param['no_generation']): 
             t1 = t2 = 0
 
             # the different optimizer algorithms
@@ -108,12 +121,17 @@ class XAI:
             time_consumption.append(t2 - t1) # grabs the overlapsed time
             Avg_cost.append(cost) # append the costs
 
-        print(best_pos)
+        # print the best_pos
+        print("====Best Position Variable====\n" + str(best_pos))
+        print("Size of best_pos:", len(best_pos))
+
 
         if self.Categorical_Status:
             self.Interpret(best_pos, True)
         else:
             self.Interpret(best_pos, False)
+        
+        # prints the resulting values
         print(Style.BRIGHT + Fore.CYAN + 'Average time value: ', Style.BRIGHT + Fore.YELLOW + str(np.mean(time_consumption) * 10**-9))
         print(Style.BRIGHT + Fore.CYAN + 'minimum Cost value: ', Style.BRIGHT + Fore.YELLOW + str(min_cost))
         print(Style.BRIGHT + Fore.CYAN + 'Average Cost value: ', Style.BRIGHT + Fore.YELLOW + str(np.mean(Avg_cost)))
@@ -128,10 +146,14 @@ class XAI:
         #     print(Style.BRIGHT + Fore.BLUE + self.features_list[i],' : ', Style.BRIGHT + Fore.GREEN + str(best_pos[i] * self.sample[i]))
 
 
+    """
+    Interprets
+
+    """
     def Interpret(self, best_pos, Categorical_Auth):
         Contribute = []
         if Categorical_Auth:
-            begin_feature = self.Categorical['Begin_Categorical']
+            begin_feature = self.Categorical['Begin_Categorical'] # int
             for i in range(begin_feature):
                 Contribute.append(best_pos[i])
 
