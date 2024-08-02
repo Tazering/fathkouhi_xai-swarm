@@ -74,18 +74,17 @@ sample_list = sample[0]
 
 data_tools.print_variable("sample_list", sample_list)
 
-
-# def __init__(self, model_predict, sample, size, no_pso, no_iteration, lb, up):
-# A = XAI(max(model.predict_proba(sample)[0]), S, np.size(S), 50, 4000, -1, 1, features_name).XAI_swarm_Invoke()
-
 ###################################################
 #   RUN XAI
 ###################################################
 
+# def __init__(self, model_predict, sample, size, no_pso, no_iteration, lb, up):
+# A = XAI(max(model.predict_proba(sample)[0]), S, np.size(S), 50, 4000, -1, 1, features_name).XAI_swarm_Invoke()
+
 temp_categorical = {"Begin_Categorical": 5, "Categorical_Index": [1, 2]}
 
 for i in range(3):
-    A = XAI_Swarm_Opt.XAI(max(model.predict_proba(sample)[0]), sample_list, np.size(sample_list), 50, 20,30, -1, 1, numerical_features, temp_categorical, True).XAI_swarm_Invoke()
+    A = XAI_Swarm_Opt.XAI(max(model.predict_proba(sample)[0]), sample_list, np.size(sample_list), 50, 20,30, -1, 1, numerical_features, temp_categorical, False).XAI_swarm_Invoke()
 
 # calculate times with xai
 import shap
@@ -109,7 +108,7 @@ import lime.lime_tabular
 num_features = np.size(sample_list)
 t1 = time.time_ns()
 explainer = lime.lime_tabular.LimeTabularExplainer(x_train.values)
-explainer = explainer.explain_instance(S,model.predict_proba, num_features = num_features)
+explainer = explainer.explain_instance(sample_list,model.predict_proba, num_features = num_features)
 t2 = time.time_ns()
 
 print(explainer.local_pred)

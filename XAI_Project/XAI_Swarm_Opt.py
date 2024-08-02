@@ -4,11 +4,12 @@ import numpy as np
 from colorama import Fore, Style
 import SwarmPackagePy
 import matplotlib.pyplot as plt
+import data_tools
 
 """
 size: (int) 
-model_predict:
-loss:
+model_predict: the complex model in need of being predicted
+loss: the loss of running the model
 sample:
 optimizer_param:
 features_list:
@@ -19,23 +20,40 @@ opt
 
 class XAI:
 
-    # initialization
-    def __init__(self, model_predict, sample, size, no_pso, no_iteration, no_generation, lb, up, features_list, Categorical, Categorical_Status):
+    """
+    The init function for the class.
+    model_predict: the complex model of interest
+    sample: the particular datapoint of interest
+    size:
+    num_pso: number of particles
+    num_iteration: the number of iterations for the swarm algorithm
+    num_generation:
+    lower_bound: lower bound
+    upper_bound: upper bound
+    numerical_features: numerical features list
+    Categorical: categorical features
+    Categorical_Status: boolean for whether to use categorical features or not
+    """
+    def __init__(self, model_predict, sample, size, num_pso, num_iteration, num_generation, lower_bound, upper_bound, numerical_features, Categorical, Categorical_Status):
         self.size = size + 1 
         self.model_predict = model_predict
         self.loss = 0
         self.sample = np.array(np.copy(sample).tolist() + [1])
-        self.optimizer_param = {'lb': lb, 'up': up, 'no_pso': no_pso, 'no_iteration': no_iteration, 'no_generation': no_generation}
-        self.features_list = features_list
+        self.optimizer_param = {'lb': lower_bound, 'upper_bound': upper_bound, 'num_pso': num_pso, 'num_iteration': num_iteration, 'num_generation': num_generation}
+        self.numerical_features = numerical_features
         self.Categorical = Categorical
         self.Categorical_Status = Categorical_Status
-        self.optimizer_type, self.optimizer_param['no_iteration'], self.optimizer_param['no_generation'] = self.Select_Optimizer()
+        self.optimizer_type, self.optimizer_param['num_iteration'], self.optimizer_param['num_generation'] = self.Select_Optimizer()
         self.Beta = 0
 
-    # prints for use
-
+    """
+    This function allows the user to choose optimizer, number of iterations, and number of generations desired
+    to run the experiment.
+    """
     def Select_Optimizer(self):
-        print('plz select the optimizer: ')
+
+        # print the optimizer choice
+        print('Select an Optimizer: ')
         print('1- Firefly Algorithm')
         print('2- Bat Algorithm')
         print('3- Artificial Bee Algorithm')
@@ -43,34 +61,55 @@ class XAI:
         print('5- Chicken Swarm Optimization')
         choice = input()
 
+        # variables to store the message prompts
+        num_iterations_msg = "Enter the number of iterations: "
+        num_generations_msg = "Enter the number of generations: "
+
+        # prompt for number of iterations and number of generations
         if choice == '1':
-            return 1, int(input('plz enter number of iteration: ')), int(input('plz enter number of generation: '))
+            return 1, int(input(num_iterations_msg)), int(input(num_generations_msg))
         elif choice == '2':
-            return 2, int(input('plz enter number of iteration: ')), int(input('plz enter number of generation: '))
+            return 2, int(input(num_iterations_msg)), int(input(num_generations_msg))
         elif choice == '3':
-            return 3, int(input('plz enter number of iteration: ')), int(input('plz enter number of generation: '))
+            return 3, int(input(num_iterations_msg)), int(input(num_generations_msg))
         elif choice == '4':
-            return 4, int(input('plz enter number of iteration: ')), int(input('plz enter number of generation: '))
+            return 4, int(input(num_iterations_msg)), int(input(num_generations_msg))
         elif choice == '5':
-            return 5, int(input('plz enter number of iteration: ')), int(input('plz enter number of generation: '))
+            return 5, int(input(num_iterations_msg)), int(input(num_generations_msg))
         else:
             return -1
 
 
-    # run the explainer function
+    """
+    This function computes the dot product of a sample and the solution that was found.
+
+    f = sample.T <dot> solution
+    """
     def explainer_func(self, solutions):
+        # data_tools.print_variable("solutions", solutions)
+        # data_tools.print_variable("sample", self.sample)
         return self.sample.T.dot(solutions)
 
-    # calculate the cost, J
+    """
+    This function calculates the cost between the explainer_function and the
+    predicted function. 
+    
+    cost = (predicted - explained)^2
+    """
     def cost_eval(self, solutions):
         return (self.model_predict - self.explainer_func(solutions))**2
 
 
-    # actual process
+    """
+    This functions actually invokes the swarm and xai for computation.
+
+    """
     def XAI_swarm_Invoke(self):
 
         # creates an array that stores the upperbound of the x values
-        x_max = self.optimizer_param['up'] * np.ones(self.size)
+        x_max = self.optimizer_param['upper_bound'] * np.ones(self.size)
+
+        # stores other important parameters   
         x_min = -1 * x_max
         optimizer = None
         time_consumption = []
@@ -79,39 +118,40 @@ class XAI:
         best_pos = None
 
         # iterate through generations
-        for i in range(self.optimizer_param['no_generation']): 
+        for i in range(self.optimizer_param['num_generation']): 
             t1 = t2 = 0
 
             # the different optimizer algorithms
             if self.optimizer_type == 1: # firefly
                 t1 = time.time_ns()
-                optimizer = SwarmPackagePy.fa(self.optimizer_param['no_pso'], self.cost_eval, x_min, x_max, self.size,
-                                               self.optimizer_param['no_iteration'])
+                optimizer = SwarmPackagePy.fa(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
+                                               self.optimizer_param['num_iteration'])
                 t2 = time.time_ns()
             elif self.optimizer_type == 2: # bat
                 t1 = time.time_ns()
-                optimizer = SwarmPackagePy.ba(self.optimizer_param['no_pso'], self.cost_eval, x_min, x_max, self.size,
-                                               self.optimizer_param['no_iteration'])
+                optimizer = SwarmPackagePy.ba(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
+                                               self.optimizer_param['num_iteration'])
                 t2 = time.time_ns()
             elif self.optimizer_type == 3: # abc
                 t1 = time.time_ns()
                 # print(self.sample)
-                optimizer = SwarmPackagePy.aba(self.optimizer_param['no_pso'], self.cost_eval, x_min, x_max, self.size,
-                                               self.optimizer_param['no_iteration'])
+                optimizer = SwarmPackagePy.aba(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
+                                               self.optimizer_param['num_iteration'])
                 t2 = time.time_ns()
             elif self.optimizer_type == 4: # cat
                 t1 = time.time_ns()
-                optimizer = SwarmPackagePy.ca(self.optimizer_param['no_pso'], self.cost_eval, x_min, x_max, self.size,
-                                               self.optimizer_param['no_iteration'])
+                optimizer = SwarmPackagePy.ca(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
+                                               self.optimizer_param['num_iteration'])
                 t2 = time.time_ns()
             elif self.optimizer_type == 5: # chicken swarm
                 t1 = time.time_ns()
-                optimizer = SwarmPackagePy.chso(self.optimizer_param['no_pso'], self.cost_eval, x_min, x_max, self.size,
-                                               self.optimizer_param['no_iteration'])
+                optimizer = SwarmPackagePy.chso(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
+                                               self.optimizer_param['num_iteration'])
                 t2 = time.time_ns()
             
             # grabs the best value from the optimizer algorithm
             pos = optimizer.get_Gbest()
+            # data_tools.print_variable("pos", pos)
             cost = self.cost_eval(pos)
 
             # updates the lowest cost value
@@ -121,11 +161,7 @@ class XAI:
             time_consumption.append(t2 - t1) # grabs the overlapsed time
             Avg_cost.append(cost) # append the costs
 
-        # print the best_pos
-        print("====Best Position Variable====\n" + str(best_pos))
-        print("Size of best_pos:", len(best_pos))
-
-
+        # account for categorical data
         if self.Categorical_Status:
             self.Interpret(best_pos, True)
         else:
@@ -148,6 +184,8 @@ class XAI:
 
     """
     Interprets
+    best_pos: the best position found
+    Categorical_Auth: (boolean) whether to account for categorical variables or not
 
     """
     def Interpret(self, best_pos, Categorical_Auth):
@@ -173,8 +211,8 @@ class XAI:
 
         # plots into a donut graph
         fig, axes = plt.subplots(2)
-        self.Donut([float(abs(Contribute[i])) for i in Positive],[self.features_list[i] + ': ' + str(abs(Contribute[i])) for i in Positive],'Positive', axes[0])
-        self.Donut([float(abs(Contribute[i])) for i in Negative],[self.features_list[i] + ': -' + str(abs(Contribute[i])) for i in Negative],'Negative', axes[1])
+        self.Donut([float(abs(Contribute[i])) for i in Positive],[self.numerical_features[i] + ': ' + str(abs(Contribute[i])) for i in Positive],'Positive', axes[0])
+        self.Donut([float(abs(Contribute[i])) for i in Negative],[self.numerical_features[i] + ': -' + str(abs(Contribute[i])) for i in Negative],'Negative', axes[1])
         plt.text(x = 2.2,y = 3.4,s='Actual prediction: ' + str(self.model_predict) + '\n' + 'approximate prediction: ' +
                    str(np.array(best_pos).dot(np.array(self.sample).T)) + '\n' + 'local fidelity: ' +
                    str(np.abs(self.model_predict - np.array(best_pos).dot(np.array(self.sample).T))),size=12,
