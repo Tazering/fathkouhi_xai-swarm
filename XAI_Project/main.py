@@ -54,15 +54,4 @@ def main():
 
     return None
 
-
-
-"""
-Grabs the datasets from a certain criteria. One thing to note is this will be a more updated version so to best
-mimic the experiment, hand-picking the datasets may be needed
-"""
-
-
-
-
-
 main()

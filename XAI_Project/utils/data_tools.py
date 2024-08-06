@@ -18,7 +18,7 @@ def print_variable(name, variable):
     print(f"Type of {name}: {type(variable)}\n")
 
 # print scalar variable
-def print_scalar(name, variable):
+def print_generic(name, variable):
     print(f"==== {name} ====")
     print(str(variable) + "\n\n")
 

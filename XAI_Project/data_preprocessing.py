@@ -13,6 +13,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.compose import make_column_selector as selector
 
+"""
+Grabs the datasets from a certain criteria. One thing to note is this will be a more updated version so to best
+mimic the experiment, hand-picking the datasets may be needed
+"""
 def get_datasets():
     df_datasets = oml.datasets.list_datasets(output_format = "dataframe")
     df_datasets = df_datasets.drop_duplicates(subset = "did").drop_duplicates(subset = ["name"]).drop_duplicates(subset = df_datasets.
