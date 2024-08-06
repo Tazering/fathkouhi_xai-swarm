@@ -1,22 +1,27 @@
 import time
+import sys
+import os
+parent_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(parent_dir)
 
 import pandas as pd
 
+import XAI
 import XAI_Swarm_Opt
-from XAI import XAI
+
 from colorama import Style, Fore
 
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-import data_tools as data_tools
+import tools.data_tools as data_tools
 
 #############################################
 #   FETCHING THE DATA
 #############################################
 
 # grab the data
-fifa_data = pd.read_csv('FIFA 2018 Statistics.csv')
+fifa_data = pd.read_csv('./datasets/FIFA 2018 Statistics.csv')
 
 # describe the data
 print(fifa_data.describe)

@@ -4,7 +4,7 @@ import numpy as np
 from colorama import Fore, Style
 import SwarmPackagePy
 import matplotlib.pyplot as plt
-import data_tools
+import tools.data_tools as data_tools
 
 """
 size: (int) 
@@ -77,6 +77,7 @@ class XAI:
         elif choice == '5':
             return 5, int(input(num_iterations_msg)), int(input(num_generations_msg))
         else:
+            exit()
             return -1
 
 
