@@ -170,7 +170,7 @@ def train_models(model, X, y, groups, problem_type, fvoid, progression_bar=True)
                     fvoid = y.mean()
             pretrained_models[tuple(group)] = fvoid
         elif len(group) < n_variables:
-            model_clone.fit(X[X.columns[group]].values, y.values.flatten())
+            model_clone.fit(X[X.columns[group]].values, y.to_numpy().flatten())
             pickle_model = pickle.dumps(model_clone)
             group.sort()
             pretrained_models[tuple(group)] = pickle_model

@@ -5,7 +5,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OrdinalEncoder, LabelEncoder
 from sklearn.compose import make_column_selector as selector
-from arff import ArffException
+# from arff import ArffException
 
 import openml as oml
 

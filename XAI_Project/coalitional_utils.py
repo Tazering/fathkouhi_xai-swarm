@@ -28,6 +28,9 @@ import pickle
 from sklearn.base import clone
 from tqdm import tqdm
 
+import utils.data_tools as data_tools
+import codecs
+
 
 def generate_groups_wo_label(nb_attributs):
     """
@@ -120,6 +123,7 @@ def check_all_attributs_groups(groups, nb_attributs):
 
 
 def remove_inclusions(groups):
+    # only picks the groups that is not a subset of the others
     return [
         groups[i]
         for i in range(len(groups))
@@ -169,6 +173,9 @@ def train_models(model, X, y, groups, problem_type, fvoid, progression_bar=True)
                 elif problem_type == "Regression":
                     fvoid = y.mean()
             pretrained_models[tuple(group)] = fvoid
+
+            
+
         elif len(group) < n_variables:
             model_clone.fit(X[X.columns[group]].values, y.values.flatten())
             pickle_model = pickle.dumps(model_clone)

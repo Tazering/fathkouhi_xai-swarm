@@ -91,8 +91,7 @@ def explanation_values_kernelSHAP(X, clf, n_background_samples=None, look_at=1, 
 # 
 def explanation_values_spearman(X, y, clf, rate, problem_type, complexity=False, fvoid=None, look_at=1, progression_bar=True):
     t0 = time.time()
-    spearman_inf = coal.coalitional_method(X, y, clf, rate, problem_type, fvoid=fvoid, complexity=complexity, method='spearman', look_at=look_at, progression_bar=progression_bar)
-    print("==========\n\n", spearman_inf, "\n\n=============")
+    spearman_inf, _ , _ = coal.coalitional_method(X, y, clf, rate, problem_type, fvoid=fvoid, complexity=complexity, method='spearman', look_at=look_at, progression_bar=progression_bar)
 
     t1 = time.time()
     
