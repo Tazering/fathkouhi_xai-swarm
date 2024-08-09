@@ -81,7 +81,7 @@ def compute_complete_influences(raw_influences, X, progression_bar):
     ):
         raw_infs = raw_influences[instance]
         influences = compute_instance_complete_inf(raw_infs, X.columns)
-        complete_influences = complete_influences.append(
+        complete_influences = complete_influences._append(
             pd.Series(influences, name=instance)
         )
 

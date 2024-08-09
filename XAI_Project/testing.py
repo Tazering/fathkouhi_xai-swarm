@@ -60,15 +60,16 @@ def test_iris():
     # kernelSHAP_explanations, kernelSHAP_values, kernelSHAP_elapsed_time = base_xai.explanation_values_kernelSHAP(X = X_preprocessed, clf = svm_model, n_background_samples = 10)
     # data_tools.print_variable("kernelSHAP_values", kernelSHAP_values)
 
-    spearman_explanations, spearman_inf, spearman_time_difference = base_xai.explanation_values_spearman(X = X_preprocessed, y = y_preprocessed, clf = svm_model, rate = 0.25,
-                                                                  problem_type = "Classification", complexity = True)
+    # spearman_explanations, spearman_inf, spearman_time_difference = base_xai.explanation_values_spearman(X = X_preprocessed, y = y_preprocessed, clf = svm_model, rate = 0.25,
+    #                                                               problem_type = "Classification", complexity = True)
     
-    data_tools.print_generic("spearman_explanations", spearman_explanations)
+    # data_tools.print_generic("spearman_explanations", spearman_explanations)
     
     # data_tools.print_variable("spearman_explanations", spearman_explanations)
     # data_tools.print_variable(spearman_values)
 
     # complete_explanation, complete_values, complete_elapsed_time = base_xai.explanation_values_complete(X = X_preprocessed, y = y_preprocessed, clf = svm_model, problem_type = "Classification")
+    # data_tools.print_variable("complete_explanation", complete_explanation)
 
     # tree_approx_explanations, tree_approx_values, tree_approx_time = base_xai.explanation_values_treeSHAP_approx(X = X_preprocessed, clf = rf_model)
     # data_tools.print_variable("tree_approx_values", tree_approx_values)
