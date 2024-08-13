@@ -111,7 +111,7 @@ def explanation_values_spearman(X, y, clf, rate, problem_type, complexity=False,
     
     return explanation, spearman_inf, t1-t0
 
-#  
+#  complete approach
 def explanation_values_complete(X, y, clf, problem_type, fvoid=None, look_at=1, progression_bar=True):
     t0 = time.time()
     complete_inf, _ = cmpl.complete_method(X, y, clf, "Classification", fvoid=fvoid, look_at=look_at, progression_bar=progression_bar)

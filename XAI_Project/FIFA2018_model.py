@@ -14,14 +14,14 @@ from colorama import Style, Fore
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-import tools.data_tools as data_tools
+import utils.data_tools as data_tools
 
 #############################################
 #   FETCHING THE DATA
 #############################################
 
 # grab the data
-fifa_data = pd.read_csv('./datasets/FIFA 2018 Statistics.csv')
+fifa_data = pd.read_csv('XAI_Project\datasets\FIFA 2018 Statistics.csv')
 
 # describe the data
 print(fifa_data.describe)
@@ -54,7 +54,7 @@ model = RandomForestClassifier().fit(x_train, y_train)
 # grab a sample 
 sample_number = 2
 
-data_tools.print_variable("x_val", x_val)
+# data_tools.print_variable("x_val", x_val)
 
 # details of a single datapoint
 sample = x_val.iloc[sample_number]
@@ -62,10 +62,10 @@ sample_y = y_val.iloc[sample_number]
 sample_y = 1 if sample_y == True else 0
 sample = sample.values.reshape(1, -1)
 
-data_tools.print_variable("sample", sample)
+# data_tools.print_variable("sample", sample)
 
 # printing stuff
-data_tools.print_dataset_sample("FIFA2018 Dataset", sample, sample_y, model)
+# data_tools.print_dataset_sample("FIFA2018 Dataset", sample, sample_y, model)
 
 # converts sample to a single list
 sample_size = np.size(sample[0])
@@ -77,7 +77,7 @@ sample_size = np.size(sample[0])
 
 sample_list = sample[0]
 
-data_tools.print_variable("sample_list", sample_list)
+# data_tools.print_variable("sample_list", sample_list)
 
 ###################################################
 #   RUN XAI

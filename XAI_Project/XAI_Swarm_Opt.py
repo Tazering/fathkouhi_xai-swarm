@@ -4,7 +4,7 @@ import numpy as np
 from colorama import Fore, Style
 import SwarmPackagePy
 import matplotlib.pyplot as plt
-import tools.data_tools as data_tools
+import utils.data_tools as data_tools
 
 """
 size: (int) 
@@ -27,27 +27,27 @@ class XAI:
     size:
     num_pso: number of particles
     num_iteration: the number of iterations for the swarm algorithm
-    num_generation:
+    num_trials: the number of trials
     lower_bound: lower bound
     upper_bound: upper bound
     numerical_features: numerical features list
     Categorical: categorical features
     Categorical_Status: boolean for whether to use categorical features or not
     """
-    def __init__(self, model_predict, sample, size, num_pso, num_iteration, num_generation, lower_bound, upper_bound, numerical_features, Categorical, Categorical_Status):
+    def __init__(self, model_predict, sample, size, num_pso, num_iteration, num_trials, lower_bound, upper_bound, numerical_features, Categorical, Categorical_Status):
         self.size = size + 1 
         self.model_predict = model_predict
         self.loss = 0
         self.sample = np.array(np.copy(sample).tolist() + [1])
-        self.optimizer_param = {'lb': lower_bound, 'upper_bound': upper_bound, 'num_pso': num_pso, 'num_iteration': num_iteration, 'num_generation': num_generation}
+        self.optimizer_param = {'lb': lower_bound, 'upper_bound': upper_bound, 'num_pso': num_pso, 'num_iteration': num_iteration, 'num_trials': num_trials}
         self.numerical_features = numerical_features
         self.Categorical = Categorical
         self.Categorical_Status = Categorical_Status
-        self.optimizer_type, self.optimizer_param['num_iteration'], self.optimizer_param['num_generation'] = self.Select_Optimizer()
+        self.optimizer_type, self.optimizer_param['num_iteration'], self.optimizer_param['num_trials'] = self.Select_Optimizer()
         self.Beta = 0
 
     """
-    This function allows the user to choose optimizer, number of iterations, and number of generations desired
+    This function allows the user to choose optimizer, number of iterations, and number of trials desired
     to run the experiment.
     """
     def Select_Optimizer(self):
@@ -63,19 +63,19 @@ class XAI:
 
         # variables to store the message prompts
         num_iterations_msg = "Enter the number of iterations: "
-        num_generations_msg = "Enter the number of generations: "
+        num_trials_msg = "Enter the number of trials: "
 
-        # prompt for number of iterations and number of generations
+        # prompt for number of iterations and number of trials
         if choice == '1':
-            return 1, int(input(num_iterations_msg)), int(input(num_generations_msg))
+            return 1, int(input(num_iterations_msg)), int(input(num_trials_msg))
         elif choice == '2':
-            return 2, int(input(num_iterations_msg)), int(input(num_generations_msg))
+            return 2, int(input(num_iterations_msg)), int(input(num_trials_msg))
         elif choice == '3':
-            return 3, int(input(num_iterations_msg)), int(input(num_generations_msg))
+            return 3, int(input(num_iterations_msg)), int(input(num_trials_msg))
         elif choice == '4':
-            return 4, int(input(num_iterations_msg)), int(input(num_generations_msg))
+            return 4, int(input(num_iterations_msg)), int(input(num_trials_msg))
         elif choice == '5':
-            return 5, int(input(num_iterations_msg)), int(input(num_generations_msg))
+            return 5, int(input(num_iterations_msg)), int(input(num_trials_msg))
         else:
             exit()
             return -1
@@ -118,8 +118,8 @@ class XAI:
         min_cost = np.inf
         best_pos = None
 
-        # iterate through generations
-        for i in range(self.optimizer_param['num_generation']): 
+        # iterate through trials
+        for i in range(self.optimizer_param['num_trials']): 
             t1 = t2 = 0
 
             # the different optimizer algorithms
