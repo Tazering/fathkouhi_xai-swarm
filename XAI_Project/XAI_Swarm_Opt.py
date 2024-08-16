@@ -78,7 +78,6 @@ class XAI:
             return 5, int(input(num_iterations_msg)), int(input(num_trials_msg))
         else:
             exit()
-            return -1
 
 
     """
@@ -125,7 +124,7 @@ class XAI:
             # the different optimizer algorithms
             if self.optimizer_type == 1: # firefly
                 t1 = time.time_ns()
-                optimizer = SwarmPackagePy.fa(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
+                optimizer = SwarmPackagePy.pso(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
                                                self.optimizer_param['num_iteration'])
                 t2 = time.time_ns()
             elif self.optimizer_type == 2: # bat
@@ -164,9 +163,9 @@ class XAI:
 
         # account for categorical data
         if self.Categorical_Status:
-            self.Interpret(best_pos, True)
+            contribute = self.Interpret(best_pos, True)
         else:
-            self.Interpret(best_pos, False)
+            contribute = self.Interpret(best_pos, False)
         
         # prints the resulting values
         print(Style.BRIGHT + Fore.CYAN + 'Average time value: ', Style.BRIGHT + Fore.YELLOW + str(np.mean(time_consumption) * 10**-9))
@@ -182,6 +181,18 @@ class XAI:
         # for i in range(len(self.features_list)):
         #     print(Style.BRIGHT + Fore.BLUE + self.features_list[i],' : ', Style.BRIGHT + Fore.GREEN + str(best_pos[i] * self.sample[i]))
 
+        # create a dictionary that maps contribution to feature
+
+        output_dict = {
+            "average_time_value": np.mean(time_consumption) * 10**-9,
+            "minimum_cost_value": min_cost,
+            "average_cost_value": np.mean(Avg_cost),
+            "explainer_model_prediction": np.array(best_pos).dot(np.array(self.sample).T),
+            "local_fidelity_measure": np.abs(self.model_predict - np.array(best_pos).dot(np.array(self.sample).T)),
+            "contribute": contribute
+        }
+
+        return output_dict
 
     """
     Interprets
@@ -193,35 +204,42 @@ class XAI:
         Contribute = []
         if Categorical_Auth:
             begin_feature = self.Categorical['Begin_Categorical'] # int
-            for i in range(begin_feature):
-                Contribute.append(best_pos[i])
+            for i in range(begin_feature): # loops from 0 to begin_feature
+                Contribute.append(best_pos[i]) # appends to contribute variable
 
-            for i in self.Categorical['Categorical_Index']:
+            for i in self.Categorical['Categorical_Index']: # loop through all categorical indices
                 Categorical_var = 0
-                for j in range(begin_feature,begin_feature + i):
-                    Categorical_var += best_pos[j]
-                begin_feature += i
-                Contribute.append(Categorical_var)
+                for j in range(begin_feature,begin_feature + i): # loops from begin_feature to begin_feature + i
+                    Categorical_var += best_pos[j] # adds up values in best_pos
+                begin_feature += i # increments begin_feature by i
+                Contribute.append(Categorical_var) # appends summed up positions to contribute
         else:
-            Contribute = list(best_pos[0:-1])
+            Contribute = list(best_pos[0:-1]) # just gets everything
         self.Beta = best_pos[-1]
         # self.features_list.append('Beta 0')
 
         # does the negative/positive distinguisher
         Negative, Positive = self.Neg_Positive_Distinguisher(Contribute)
 
+        # print contributions
+        data_tools.print_generic("numerical_features", self.numerical_features)
+        data_tools.print_generic("Contribute", Contribute)
+
         # plots into a donut graph
-        fig, axes = plt.subplots(2)
-        self.Donut([float(abs(Contribute[i])) for i in Positive],[self.numerical_features[i] + ': ' + str(abs(Contribute[i])) for i in Positive],'Positive', axes[0])
-        self.Donut([float(abs(Contribute[i])) for i in Negative],[self.numerical_features[i] + ': -' + str(abs(Contribute[i])) for i in Negative],'Negative', axes[1])
-        plt.text(x = 2.2,y = 3.4,s='Actual prediction: ' + str(self.model_predict) + '\n' + 'approximate prediction: ' +
-                   str(np.array(best_pos).dot(np.array(self.sample).T)) + '\n' + 'local fidelity: ' +
-                   str(np.abs(self.model_predict - np.array(best_pos).dot(np.array(self.sample).T))),size=12,
-                    bbox=dict(boxstyle="round",
-                       ec=(1., 0.5, 0.5),
-                       fc=(1., 0.8, 0.8),
-                       ))
-        plt.show()
+        # fig, axes = plt.subplots(2)
+        # self.Donut([float(abs(Contribute[i])) for i in Positive],[self.numerical_features[i] + ': ' + str(abs(Contribute[i])) for i in Positive],'Positive', axes[0])
+        # self.Donut([float(abs(Contribute[i])) for i in Negative],[self.numerical_features[i] + ': -' + str(abs(Contribute[i])) for i in Negative],'Negative', axes[1])
+
+        # plt.text(x = 2.2,y = 3.4,s='Actual prediction: ' + str(self.model_predict) + '\n' + 'approximate prediction: ' +
+        #            str(np.array(best_pos).dot(np.array(self.sample).T)) + '\n' + 'local fidelity: ' +
+        #            str(np.abs(self.model_predict - np.array(best_pos).dot(np.array(self.sample).T))),size=12,
+        #             bbox=dict(boxstyle="round",
+        #                ec=(1., 0.5, 0.5),
+        #                fc=(1., 0.8, 0.8),
+        #                ))
+        # plt.show()
+
+        return Contribute
 
     """
     This function distinguishes between negative and positive values. This is done by checking if the 

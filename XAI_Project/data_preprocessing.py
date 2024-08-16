@@ -9,9 +9,10 @@ from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OrdinalEncoder, LabelEncoder
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.compose import make_column_selector as selector
+
+import utils.data_tools as data_tools
 
 """
 Grabs the datasets from a certain criteria. One thing to note is this will be a more updated version so to best
@@ -73,7 +74,7 @@ def process_openml_dataset(dataset_index, target_var):
     
     # exclude "object" datatypes
     X = X.select_dtypes(exclude=["object"])
-
+    
     # preprocess the data
     X_preprocessed, y_preprocessed = preprocess_data(X, y, target_variable = target_var)
 
@@ -101,7 +102,7 @@ def preprocess_data(X, y, target_variable):
         ("num", numeric_transformer, selector(dtype_exclude = ["category"])),
         ("cat", categorical_transformer, selector(dtype_include = "category"))
     ])
-
+    
     # preprocess the X values
     X_preprocessed = column_transformer.fit_transform(X)
     # format the dataset such that the numerical features are first and then the categorical
