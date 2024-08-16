@@ -26,8 +26,8 @@ import lime.lime_tabular as lime_tabular
 import shap
 from tqdm.auto import tqdm
 
-import coalitional_methods as coal
-import complete_method as cmpl
+import dependencies.coalitional_methods as coal
+import dependencies.complete_method as cmpl
 
 import utils.data_tools as data_tools
 
