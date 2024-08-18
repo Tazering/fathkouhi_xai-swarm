@@ -28,15 +28,17 @@ import numpy as np
 import itertools
 from tqdm import tqdm
 
+import helpful_utils.data_tools as data_tools
+
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-import utils.data_tools as data_tools
+from utils import train_models, explain_groups_w_retrain, influence_calcul
+from utils import check_all_attributs_groups, compute_subgroups_correlation
+from utils import remove_inclusions, generate_subgroups_group, coal_penalisation
 
-from coalitional_utils import train_models, explain_groups_w_retrain, influence_calcul
-from coalitional_utils import check_all_attributs_groups, compute_subgroups_correlation
-from coalitional_utils import remove_inclusions, generate_subgroups_group, coal_penalisation
+
 
 def compute_vifs(datas):
     """
@@ -241,10 +243,8 @@ def find_alpha_rate(coal_function, n_rate, X, max_iterations=100):
     """
 
     alpha = 0.5
-    subgroups = coal_function(X, threshold=alpha) # pca -> grabs groups that is not a subset of another group
-
-    # calculates the size of the powerset
-    nb_subgroups = compute_number_distinct_subgroups(subgroups) # iris: 15
+    subgroups = coal_function(X, threshold=alpha)
+    nb_subgroups = compute_number_distinct_subgroups(subgroups)
 
     (alpha_best, subgroups_best, nb_subgroups_best) = (alpha, subgroups, nb_subgroups)
 
@@ -253,7 +253,6 @@ def find_alpha_rate(coal_function, n_rate, X, max_iterations=100):
 
     i = 0
 
-    # iteratively finds the best values that minimize the difference between the size of the powerset and the rate
     while i < max_iterations:
         alpha = alpha + alpha / 2 if nb_subgroups < n_rate else alpha - alpha / 2
         subgroups = coal_function(X, threshold=alpha)
@@ -294,13 +293,12 @@ def complexity_coal_groups(X, rate, grouping_function, reverse):
     coal_groups : two-dimensional list
         Groups of correlated attributs compute with the selected method.
     """
-
-    n_total = 2 ** X.shape[1] - 1 # for iris: n_total = 15
-    n_rate = int(np.round(n_total * rate, 0)) # iris: 3
+    n_total = 2 ** X.shape[1] - 1 # iris: 15
+    n_rate = int(np.round(n_total * rate, 0))
 
     coal_groups, alpha = find_alpha_rate(
         coal_function=lambda X_, threshold: remove_inclusions(
-            grouping_function(X_, threshold, reverse) # group via pca
+            grouping_function(X_, threshold, reverse)
         ),
         n_rate=n_rate,
         X=X,
@@ -381,7 +379,6 @@ def compute_coalitional_influences(
         coalitional_influences = coalitional_influences._append(
             pd.Series(influences, name=instance)
         )
-        # coalitional_influences = pd.concat([coalitional_influences, pd.Series(influences, name = instance)], ignore_index = True)
 
     return coalitional_influences
 
@@ -456,7 +453,7 @@ def coalitional_method(
             groups = methods[method](X, rate, reverse)
 
     subgroups = compute_subgroups_correlation(groups) + [[]]
-
+    
     pretrained_models = train_models(
         model, X, y, subgroups, problem_type, fvoid, progression_bar
     )
@@ -465,15 +462,11 @@ def coalitional_method(
         pretrained_models, X, problem_type, look_at, progression_bar
     )
 
-    # data_tools.print_variable("raw_groups_influences", raw_groups_influences)
-
     coalition_influences = compute_coalitional_influences(
-        raw_groups_influences, X, groups, progression_bar
+        raw_groups_influences, X, subgroups, progression_bar
     )
 
-    data_tools.print_variable("coalition_influences", coalition_influences)
-
-    return coalition_influences , pretrained_models, groups
+    return coalition_influences, pretrained_models, groups
 
 
 def compute_influences(

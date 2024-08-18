@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import pandas as pd
 from tqdm import tqdm
 
-from complete_utils import standard_penalisation, generate_groups_wo_label
-from complete_utils import train_models, explain_groups_w_retrain, influence_calcul
+from utils import standard_penalisation, generate_groups_wo_label
+from utils import train_models, explain_groups_w_retrain, influence_calcul
 
 
 def compute_instance_complete_inf(raw_instance_inf, columns):

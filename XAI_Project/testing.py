@@ -14,11 +14,11 @@ from lime import lime_tabular
 import shap
 
 # local from other python files
-import utils.data_tools as data_tools
+import helpful_utils.data_tools as data_tools
 import base_xai
 import data_preprocessing as dp
 
-import dependencies.coalitional_methods as coal
+import coalitional_methods as coal
 import model_utils as model_utils
 
 import xai_utils
@@ -28,7 +28,7 @@ import XAI_Swarm_Opt
 # iris
 def test_iris():
     # grab data and split it
-    X_preprocessed, y_preprocessed = dp.process_openml_dataset(17, "class")
+    X_preprocessed, y_preprocessed = dp.process_openml_dataset(61, "class")
 
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X_preprocessed, y_preprocessed, test_size = .2)
 
@@ -37,6 +37,8 @@ def test_iris():
 
     # get list of feature names
     features_names = X_train.columns
+
+    spearman_tuple = base_xai.explanation_values_spearman(X = X_preprocessed, y = y_preprocessed, clf = svm_model, rate = .25, problem_type = "Classification", complexity = True)
 
     # # run swarm explanations
     # # grab a sample 
@@ -55,24 +57,24 @@ def test_iris():
 
     # sample_list = sample[0]
 
-    sample, sample_list = xai_utils.grab_sample(X_test, y_test, 5)
+    # sample, sample_list = xai_utils.grab_sample(X_test, y_test, 5)
 
-    temp_categorical = {"Begin_Categorical": 3, "Categorical_Index": [1, 2]}
+    # temp_categorical = {"Begin_Categorical": 3, "Categorical_Index": [1, 2]}
 
-    data_tools.print_generic("svm_model output", svm_model.predict(sample))
+    # data_tools.print_generic("svm_model output", svm_model.predict(sample))
 
-    results = XAI_Swarm_Opt.XAI(svm_model.predict(sample)[0], sample_list, np.size(sample_list), 50, 20,30, -1, 1, X_preprocessed, temp_categorical, False).XAI_swarm_Invoke()
+    # results = XAI_Swarm_Opt.XAI(svm_model.predict(sample)[0], sample_list, np.size(sample_list), 50, 20,30, -1, 1, X_preprocessed, temp_categorical, False).XAI_swarm_Invoke()
 
-    contribute_dict = {}
-    contributes = results["contribute"]
+    # contribute_dict = {}
+    # contributes = results["contribute"]
 
-    for i in range(len(contributes)):
-        contribute_dict[features_names[i]] = contributes[i]
+    # for i in range(len(contributes)):
+    #     contribute_dict[features_names[i]] = contributes[i]
     
 
-    results["contribute"] = contribute_dict
+    # results["contribute"] = contribute_dict
 
-    data_tools.print_generic("results", results)
+    # data_tools.print_generic("results", results)
 
     # get metrics
 

@@ -12,7 +12,7 @@ from sklearn.preprocessing import OrdinalEncoder, LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.compose import make_column_selector as selector
 
-import utils.data_tools as data_tools
+import helpful_utils.data_tools as data_tools
 
 """
 Grabs the datasets from a certain criteria. One thing to note is this will be a more updated version so to best

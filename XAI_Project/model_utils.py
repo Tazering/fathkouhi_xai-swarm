@@ -6,8 +6,8 @@ import numpy as np
 import sklearn
 
 # local from other python files
-import utils.data_tools as data_tools
-import utils.constants as constants
+import helpful_utils.data_tools as data_tools
+import helpful_utils.constants as constants
 
 
 """
@@ -24,7 +24,7 @@ Run the models on a given dataset
     rf_model: fitted random forest model
     gb_model: fitted gradient-boosted machine model
 """
-def run_models(X_train, y_train, X_test, y_test):
+def run_models(X_train, y_train, X_test, y_test, show_score = False):
     # run all models: logistic regression, support vector machines, random forests, and gradient boosted machines
     lr_model = constants.models["logistic_regression"].fit(X_train, y_train)
     svm_model = constants.models["support_vector_machine"].fit(X_train, y_train)
@@ -32,9 +32,10 @@ def run_models(X_train, y_train, X_test, y_test):
     gb_model = constants.models["gradient_boosted_machine"].fit(X_train, y_train)
 
     # prints the scores of the models
-    data_tools.print_generic("Logistic Regression Score", lr_model.score(X_test, y_test))
-    data_tools.print_generic("SVM Score", svm_model.score(X_test, y_test))
-    data_tools.print_generic("RF Score", rf_model.score(X_test, y_test))
-    data_tools.print_generic("GB Score", gb_model.score(X_test, y_test))
+    if show_score:
+        data_tools.print_generic("Logistic Regression Score", lr_model.score(X_test, y_test))
+        data_tools.print_generic("SVM Score", svm_model.score(X_test, y_test))
+        data_tools.print_generic("RF Score", rf_model.score(X_test, y_test))
+        data_tools.print_generic("GB Score", gb_model.score(X_test, y_test))
 
     return lr_model, svm_model, rf_model, gb_model
