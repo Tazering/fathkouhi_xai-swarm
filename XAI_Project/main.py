@@ -16,14 +16,13 @@ import seaborn as sns
 
 import swarm_xai
 
-import time
-import pickle
 import data_preprocessing
 import helpful_utils.data_tools as data_tools
 import helpful_utils.constants as constants
 import model_utils
 import base_xai
 import xai_utils
+import metrics
 
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -72,21 +71,31 @@ def experiment_dataset(dataset_id):
     ##########
     #   Step 3: Run the Base XAI functions on the dataset
     ##########
-
+    
+    # dictionary in the form: {(string) name of approach: (tuple) (explanation, shap_values, time_consumption)}
     base_xai_dict = base_xai_study(X_preprocessed = X_preprocessed, y_preprocessed = y_preprocessed, clf = rf_model)
 
     ##########
     #   Step 4: Run the Swarm Approach on the dataset
     ##########
+    
+    # dictionary in the form: {(string) name of approach: (dictionary) {(string) measurement: (numerical) value}}
+    swarm_xai_dict = swarm_xai_study(X_preprocessed = X_preprocessed, X_test = X_test, y_test = y_test, model = svm_model, sample_number = 17)
 
-    swarm_dict = swarm_xai_study(X_preprocessed = X_preprocessed, X_test = X_test, y_test = y_test, model = svm_model, sample_number = 17)
-
-    data_tools.print_generic("swarm_dict", swarm_dict)
+    # data_tools.print_generic("base_xai_dict", base_xai_dict)
+    # data_tools.print_generic("swarm_dict", swarm_dict)
 
     ##########
     #   Step 5: Get the Metrics of both base and optimized
     ##########
 
+    # dictionary that stores metrics of base_xai approaches
+    base_dict = metrics.calculate_metrics_of_model(X = X_preprocessed, xai_dict = base_xai_dict, is_swarm = False)
+    swarm_dict = metrics.calculate_metrics_of_model(X = X_preprocessed, xai_dict = swarm_xai_dict, is_swarm = True)
+
+    experiment_results = metrics.aggregate_base_and_swarm_dictionaries(base_xai_dict = base_dict, swarm_xai_dict = swarm_dict)
+
+    data_tools.print_generic("experiment_results", experiment_results)
 
 """
 Run all base_xai approaches on a single dataset and single model

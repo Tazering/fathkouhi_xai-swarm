@@ -76,10 +76,6 @@ def explanation_values_kernelSHAP(X, clf, n_background_samples=None, look_at=1, 
                                                X=X,
                                                look_at=look_at)
 
-    print("AFTER EXPLANATION ============================\n\n")
-
-    data_tools.print_variable("shap_values[1]", shap_values[look_at])
-    data_tools.print_variable("X.columns", X.columns)
 
     shap_values = pd.DataFrame(shap_values[look_at],
                                index=X.columns)

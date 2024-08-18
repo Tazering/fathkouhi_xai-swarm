@@ -47,34 +47,6 @@ class XAI:
         self.Beta = 0
 
     """
-    This function allows the user to choose optimizer, number of iterations, and number of trials desired
-    to run the experiment.
-    """
-    def Select_Optimizer(self):
-
-        # print the optimizer choice
-        print('Select an Optimizer: ')
-        print('1- PSO Algorithm')
-        print('2- Bat Algorithm')
-        print('3- Artificial Bee Algorithm')
-        choice = input()
-
-        # variables to store the message prompts
-        num_iterations_msg = "Enter the number of iterations: "
-        num_trials_msg = "Enter the number of trials: "
-
-        # prompt for number of iterations and number of trials
-        if choice == '1':
-            return 1, int(input(num_iterations_msg)), int(input(num_trials_msg))
-        elif choice == '2':
-            return 2, int(input(num_iterations_msg)), int(input(num_trials_msg))
-        elif choice == '3':
-            return 3, int(input(num_iterations_msg)), int(input(num_trials_msg))
-        else:
-            exit()
-
-
-    """
     This function computes the dot product of a sample and the solution that was found.
 
     f = sample.T <dot> solution

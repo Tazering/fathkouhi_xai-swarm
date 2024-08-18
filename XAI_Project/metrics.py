@@ -10,6 +10,11 @@ import numpy as np
 
 import scipy.stats
 
+##################################################################
+#   Methods
+##################################################################
+
+
 """
 Metric 1: Mean per Instance
    Parameters:
@@ -116,3 +121,69 @@ def clusterability(dataset, d, K, S, explanations):
     scaling_factor = 2 / (d * (d - 1))
 
     return scaling_factor * total
+
+##################################################################
+#   Functions that are used for the experiment directly
+##################################################################
+
+"""
+Calculates the value of the metrics described in the paper for a single dataset of single model
+for either all the base xai approaches or the swarm optimizer approaches.
+@parameters
+    X: pandas dataframe
+        dataset of interest
+    xai_dict: {(string) name of approach: (tuple) (explanation, shap_values, time_consumption)} 
+              OR {(string) name of approach: (dictionary) {(string) measurement: (numerical) value}}
+        dictionary that has all the base_xai information
+    is_swarm: boolean
+        is the dictionary a swarm or base dictionary format
+        
+@returns:
+
+"""
+def calculate_metrics_of_model(X, xai_dict, is_swarm = False):
+    # common variables
+    n = X.shape[0]
+    output_dict = {}
+
+
+    # actual algorithm
+    if is_swarm: # swarm approach
+        # initial setup of the dictionary
+        output_dict["pso"] = {}
+        output_dict["bat"] = {}
+        output_dict["abc"] = {}
+
+        computation_time_pso = xai_dict["pso"]["average_time_value"]
+
+        output_dict["pso"]["mean_per_instance"] = mean_per_instance(computation_time = computation_time_pso, n = n)
+
+
+        pass
+
+    else: # base approach
+        # initial setup of the dictionary
+        output_dict["lime"] = {}
+        output_dict["kernelshap"] = {}
+        output_dict["spearman"] = {}
+        output_dict["treeshap"] = {}
+        output_dict["treeshap_approx"] = {}
+
+        # lime
+        computation_time_lime = xai_dict["lime"][2]
+
+        output_dict["lime"]["mean_per_instance"] = mean_per_instance(computation_time = computation_time_lime, n = n)
+
+    
+    return output_dict
+
+"""
+This functions aggregates the base_xai and swarm_xai dictionaries.
+"""
+def aggregate_base_and_swarm_dictionaries(base_xai_dict, swarm_xai_dict):
+    aggregated_dict = {}
+
+    aggregated_dict["base_xai"] = base_xai_dict
+    aggregated_dict["swarm_xai"] = swarm_xai_dict
+
+    return aggregated_dict
