@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 
 import scipy.stats
+import helpful_utils.data_tools as data_tools
 
 ##################################################################
 #   Methods
@@ -27,27 +28,42 @@ def mean_per_instance(computation_time, n):
 
 """
 Metric 2: Error with Complete Method
-n = number of samples
-p = number of features (for averaging)
-d = number of features (from the dataset)
-exp_influence = influence of a feature of a particular instance by some explanation method
-comp_influence = influence of a feature of a particular instance by the complete method
+@Parameters
+    n: int 
+        number of examples
+    p: int
+        number of features (for averaging)
+    d: int 
+        number of features (from the dataset)
+    exp_influence: list
+        influence of a feature of a particular instance by some explanation method
+    comp_influence: list 
+        influence of a feature of a particular instance by the complete method
 """
 def complete_method_error(n, p, d, exp_influence, comp_influence):
 
     # needed variables
-    n = 10
-    p = 5
-    d = 5
     instance_sum = 0
+
+    # convert to numpy arrays
+    if not isinstance(exp_influence, np.ndarray) and not isinstance(exp_influence, list):
+        exp_influence = exp_influence.to_numpy()
     
+    if not isinstance(comp_influence, np.ndarray):
+        comp_influence = comp_influence.to_numpy()
+
+    # data_tools.print_generic("exp_influence", exp_influence[0][3])
+    # data_tools.print_and_end(comp_influence[0][3])
+
     # loop through each instance
     for instance_num in range(n): # loop through instances
 
         feature_sum = 0
 
         for feature_num in range(d):
-            feature_sum += abs(exp_influence[feature_num] - comp_influence[feature_num]) # get the error
+            # print("\n\n", instance_num, feature_num, "\n\n")
+
+            feature_sum += abs(exp_influence[instance_num][feature_num] - comp_influence[instance_num][feature_num]) # get the error
         
         instance_sum += feature_sum # add the feature sum
     
@@ -127,7 +143,7 @@ def clusterability(dataset, d, K, S, explanations):
 ##################################################################
 
 """
-Calculates the value of the metrics described in the paper for a single dataset of single model
+Calculates the value of the metrics described in the paper for a single model of a single dataset
 for either all the base xai approaches or the swarm optimizer approaches.
 @parameters
     X: pandas dataframe
@@ -141,49 +157,54 @@ for either all the base xai approaches or the swarm optimizer approaches.
 @returns:
 
 """
-def calculate_metrics_of_model(X, xai_dict, is_swarm = False):
+def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict):
     # common variables
-    n = X.shape[0]
+    n = X.shape[0] # number of datapoints
+    d = X.shape[1] # number of features
     output_dict = {}
+    output_dict["base_xai"] = {}
+    output_dict["swarm_xai"] = {}
+
+    # base approaches
+    approach_names = ["lime", "complete", "kernelshap", "spearman", "treeshap", "treeshap_approx"]
+    for base_xai_name in approach_names: # go through various base_xai algorithms
+        # initialize to empty dictionary
+        output_dict["base_xai"][base_xai_name] = {}
+
+        # in case of empty results of a method
+        if len(base_xai_dict[base_xai_name]) == 0:
+            print(f"Empty tuple for {base_xai_name}")
+            continue
+
+        # mean per instance
+        computation_time = base_xai_dict[base_xai_name][2] # grabs time consumption
+        output_dict["base_xai"][base_xai_name]["mean_per_instance"] = mean_per_instance(computation_time = computation_time, n = n)
+
+        print("\n\n", base_xai_name, "\n\n")
+
+        # complete error 
+        try:
+            output_dict["base_xai"][base_xai_name]["complete_error"] = complete_method_error(n = n, p = d, d = d, 
+                                                                                            exp_influence = base_xai_dict[base_xai_name][1], 
+                                                                                            comp_influence = base_xai_dict["complete"][1]) # grabs the shap values or influences
+        except:
+            output_dict["base_xai"][base_xai_name]["complete_error"] = None
 
 
-    # actual algorithm
-    if is_swarm: # swarm approach
-        # initial setup of the dictionary
-        output_dict["pso"] = {}
-        output_dict["bat"] = {}
-        output_dict["abc"] = {}
+    # swarm approaches
+    approach_names = ["pso", "bat", "abc"]
+    for swarm_xai_name in approach_names:
+        # initiate to empty dictionary
+        output_dict["swarm_xai"][swarm_xai_name] = {}
 
-        computation_time_pso = xai_dict["pso"]["average_time_value"]
+        # mean per instance
+        computation_time = swarm_xai_dict[swarm_xai_name]["average_time_value"]
+        output_dict["swarm_xai"][swarm_xai_name]["mean_per_instance"] = mean_per_instance(computation_time = computation_time, n = n)
 
-        output_dict["pso"]["mean_per_instance"] = mean_per_instance(computation_time = computation_time_pso, n = n)
+        # complete method
+        output_dict["swarm_xai"][swarm_xai_dict]["complete"] = complete_method_error(n = n, p = d, d = d, 
+                                                                                    exp_influence = swarm_xai_dict[swarm_xai_name]["contribute"], 
+                                                                                    comp_influence = base_xai_dict["complete"][1])
 
 
-        pass
-
-    else: # base approach
-        # initial setup of the dictionary
-        output_dict["lime"] = {}
-        output_dict["kernelshap"] = {}
-        output_dict["spearman"] = {}
-        output_dict["treeshap"] = {}
-        output_dict["treeshap_approx"] = {}
-
-        # lime
-        computation_time_lime = xai_dict["lime"][2]
-
-        output_dict["lime"]["mean_per_instance"] = mean_per_instance(computation_time = computation_time_lime, n = n)
-
-    
     return output_dict
-
-"""
-This functions aggregates the base_xai and swarm_xai dictionaries.
-"""
-def aggregate_base_and_swarm_dictionaries(base_xai_dict, swarm_xai_dict):
-    aggregated_dict = {}
-
-    aggregated_dict["base_xai"] = base_xai_dict
-    aggregated_dict["swarm_xai"] = swarm_xai_dict
-
-    return aggregated_dict

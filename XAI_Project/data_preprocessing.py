@@ -34,7 +34,7 @@ def get_datasets():
     
     return df_datasets
 
-def process_openml_dataset(dataset_index, target_var):
+def process_openml_dataset(dataset_index):
     """
     Grabs the dataset from openml using the dataset_index variable and
     proprocesses the data.
@@ -76,7 +76,7 @@ def process_openml_dataset(dataset_index, target_var):
     X = X.select_dtypes(exclude=["object"])
     
     # preprocess the data
-    X_preprocessed, y_preprocessed = preprocess_data(X, y, target_variable = target_var)
+    X_preprocessed, y_preprocessed = preprocess_data(X, y, target_variable = dataset.default_target_attribute)
 
     return X_preprocessed, y_preprocessed
 

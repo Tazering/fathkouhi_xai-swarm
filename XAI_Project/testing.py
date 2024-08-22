@@ -23,14 +23,16 @@ import model_utils as model_utils
 
 import xai_utils
 
-import XAI_Swarm_Opt
+
 
 # iris
 def test_iris():
     # grab data and split it
-    X_preprocessed, y_preprocessed = dp.process_openml_dataset(61, "class")
+    X_preprocessed, y_preprocessed = dp.process_openml_dataset("vineyard")
 
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X_preprocessed, y_preprocessed, test_size = .2)
+
+    print(y_test)
 
     # run all models: logistic regression, support vector machines, random forests, and gradient boosted machines
     lr_model, svm_model, rf_model, gb_model = model_utils.run_models(X_train, y_train, X_test, y_test)

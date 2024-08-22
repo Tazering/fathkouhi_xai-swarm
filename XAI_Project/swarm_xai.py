@@ -1,179 +1,256 @@
-import time
+"""
+This python file holds all the XAI swarm approaches code.
+"""
 
+import time as time
+import pandas as pd
 import numpy as np
-from colorama import Fore, Style
-import SwarmPackagePy
-import matplotlib.pyplot as plt
+
+import xai_utils 
 import helpful_utils.data_tools as data_tools
 
+import SwarmPackagePy
+
+
 """
-size: (int) 
-model_predict: the complex model in need of being predicted
-loss: the loss of running the model
-sample:
-optimizer_param:
-features_list:
-categorical:
-categorical_status:
-opt
+This function invokes the xai swarm approach.
+@Parameters
+    X_test: pandas.dataframe
+        the testing input data
+    Y_test: pandas.dataframe
+        the testing output data
+    num_trials: int
+        number of trials to run
+    swarm_parameters: dictionary
+        dictionary that holds parameters for running an optimizer:
+
+        Key: Value
+        optimizer_number: int
+            indicate which swarm optimizer to use; 1 - PSO, 2 - BAT, 3 - ABC
+        num_agents: int
+            the number of agents/particles/bats/bees
+        upper_bound: int
+            indicates the upperbound of the results
+        lower_bound: int
+            indicates the lowerbound of the results
+        dimension: int
+            dimensions of the space
+        num_iterations: int
+            the number of iterations of optimizing
+
+        For PSO
+    ------------------ 
+        w: float
+            mostly for pso; balance between range of research and consideration for suboptimal decisions
+        c1: float
+            ratio between cognitive and social component
+        c2: float
+            ratio between cognitive and social component
+    ------------------
+        OR for bat
+    ------------------
+        r0: float
+            level of impulse emission
+        V0: float
+            volume of sound
+        fmin: float
+            min wave frequency
+        fmax: float
+            max wave frequency
+        alpha: float
+            constant for change a volume of sound
+        csi: float
+            constant for change a level of impulse emission
+    ------------------
+ """
+def run_swarm_approach(X_test, y_test, model = None, num_trials = 10, swarm_parameters = {}):
+
+    experiment_results = run_xai_swarm(X_test, y_test, model = model, num_trials = num_trials, swarm_parameters = swarm_parameters)
+    return experiment_results
+
 """
+TEST FUNCTION to test optimizer
+"""
+def test_function(solution):
+    x = solution[0]
+    y = solution[1]
+    return pow(x, 2) + pow(y, 2) - x + 2 * y 
 
-class XAI:
+"""
+This function runs that actual swarm optimization approach.
+@Parameters
+    X_test: pandas.dataframe
+        the input testing data
+    y_test: pandas.dataframe
+        the output testing data
+    num_trials: int
+        the number of trials to run for the experiment
+    swarm_parameters: dict
+        the parameters needed to run the swarm optimization algorithms
 
-    """
-    The init function for the class.
-    model_predict: the complex model of interest
-    sample: the particular datapoint of interest
-    size:
-    num_pso: number of particles
-    num_iteration: the number of iterations for the swarm algorithm
-    num_trials: the number of trials
-    lower_bound: lower bound
-    upper_bound: upper bound
-    numerical_features: numerical features list
-    Categorical: categorical features
-    Categorical_Status: boolean for whether to use categorical features or not
-    """
-    def __init__(self, model_predict, sample, size, num_pso, num_iteration, num_trials, lower_bound, upper_bound, numerical_features, Categorical, Categorical_Status, optimizer_type):
-        self.size = size + 1 
-        self.model_predict = model_predict
-        self.loss = 0
-        self.sample = np.array(np.copy(sample).tolist() + [1])
-        self.optimizer_param = {'lb': lower_bound, 'upper_bound': upper_bound, 'num_pso': num_pso, 'num_iteration': num_iteration, 'num_trials': num_trials}
-        self.numerical_features = numerical_features
-        self.Categorical = Categorical
-        self.Categorical_Status = Categorical_Status
-        self.optimizer_type = optimizer_type
-        self.Beta = 0
+        Key:Value
+        optimizer_number: int
+            indicate which swarm optimizer to use; 1 - PSO, 2 - BAT, 3 - ABC
+        num_agents: int
+            the number of agents/particles/bats/bees
+        upper_bound: int
+            indicates the upperbound of the results
+        lower_bound: int
+            indicates the lowerbound of the results
+        dimension: int
+            dimensions of the space
+        num_iterations: int
+            the number of iterations of optimizing
+        w: float
+            mostly for pso; balance between range of research and consideration for suboptimal decisions
+        c1: float
+            ratio between cognitive and social component
+        c2: float
+            ratio between cognitive and social component
 
-    """
-    This function computes the dot product of a sample and the solution that was found.
+@Returns
+    output_dict: dict
+        The results of the experiment in a dictionary format
 
-    f = sample.T <dot> solution
-    """
-    def explainer_func(self, solutions):
-        return self.sample.T.dot(solutions)
+        Key : Value
+        average_time_value : float
+            the average time for the explainer to explain all instances
+        minimum_cost_value : float
+            the lowest cost from all trials
+        average_cost_value: float
+            average cost from all trials
+        explainer_model_prediction: float
+            prediction of the surrogate model
+        local_fidelity_measure: float
+        contribute: list
+            list of contributions of all features for each instance
+"""
+def run_xai_swarm(X_test, y_test, model, num_trials, swarm_parameters):
+    # initial variables
+    n = X_test.shape[0] # number of instances
+    output_dict = {}
+    min_cost = np.inf
+    total_times_of_all_trials = 0
+    best_pos = np.inf
+    total_cost_of_all_trials = 0
+    explainer_best_predictions = []
 
-    """
-    This function calculates the cost between the explainer_function and the
-    predicted function. 
-    
-    cost = (predicted - explained)^2
-    """
-    def cost_eval(self, solutions):
-        return (self.model_predict - self.explainer_func(solutions))**2
+    model_pred = model.predict(X_test) # predictions
+
+    # output_dict = {
+    #         "average_time_value": np.mean(time_consumption) * 10**-9,
+    #         "minimum_cost_value": min_cost,
+    #         "average_cost_value": np.mean(Avg_cost),
+    #         "explainer_model_prediction": np.array(best_pos).dot(np.array(self.sample).T),
+    #         "local_fidelity_measure": np.abs(self.model_predict - np.array(best_pos).dot(np.array(self.sample).T)),
+    #         "contribute": contribute
+    #     }
+
+    # loop through trials
+    for trial in range(num_trials):
+
+        # initialize variables
+        total_time_of_all_instances = 0
+        total_cost = 0
+        solutions = []
 
 
-    """
-    This functions actually invokes the swarm and xai for computation.
-
-    """
-    def XAI_swarm_Invoke(self):
-
-        # creates an array that stores the upperbound of the x values
-        x_max = self.optimizer_param['upper_bound'] * np.ones(self.size)
-
-        # stores other important parameters   
-        x_min = -1 * x_max
-        optimizer = None
-        time_consumption = []
-        Avg_cost = []
-        min_cost = np.inf
-        best_pos = None
-
-        # iterate through trials
-        for i in range(self.optimizer_param['num_trials']): 
+        for instance_num in range(n): # loop through instances
             t1 = t2 = 0
+            sample, sample_list = xai_utils.grab_sample(X_test = X_test, y_test = y_test, sample_number = instance_num) # grabs a sample
 
-            # the different optimizer algorithms
-            if self.optimizer_type == 1: # PSO
-                t1 = time.time_ns()
-                optimizer = SwarmPackagePy.pso(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
-                                               self.optimizer_param['num_iteration'])
-                t2 = time.time_ns()
-            elif self.optimizer_type == 2: # bat
-                t1 = time.time_ns()
-                optimizer = SwarmPackagePy.ba(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
-                                               self.optimizer_param['num_iteration'])
-                t2 = time.time_ns()
-            elif self.optimizer_type == 3: # abc
-                t1 = time.time_ns()
-                # print(self.sample)
-                optimizer = SwarmPackagePy.aba(self.optimizer_param['num_pso'], self.cost_eval, x_min, x_max, self.size,
-                                               self.optimizer_param['num_iteration'])
-                t2 = time.time_ns()
-            
-            # grabs the best value from the optimizer algorithm
-            pos = optimizer.get_Gbest()
-            # data_tools.print_variable("pos", pos)
-            cost = self.cost_eval(pos)
+            # objective function
+            def explainer_func(solution):
+                return sample_list.T.dot(solution)
 
-            # updates the lowest cost value
-            if cost < min_cost:
-                min_cost = cost
-                best_pos = pos
-            time_consumption.append(t2 - t1) # grabs the overlapsed time
-            Avg_cost.append(cost) # append the costs
+            def cost_eval(solution):
+                return (model_pred[instance_num] - explainer_func(solution))**2
 
-        # account for categorical data
-        if self.Categorical_Status:
-            contribute = self.Interpret(best_pos, True)
-        else:
-            contribute = self.Interpret(best_pos, False)
+
+            # run the optimizers
+            if swarm_parameters["optimizer_number"] == 1: # run the pso algorithm
+                t1 = time.time()
+                optimizer = SwarmPackagePy.pso(n = swarm_parameters["num_agents"], function = cost_eval, 
+                                               lb = swarm_parameters["lower_bound"], ub = swarm_parameters["upper_bound"],
+                                               dimension = swarm_parameters["dimension"], iteration = swarm_parameters["num_iterations"], w = swarm_parameters["w"], c1 = swarm_parameters["c1"], 
+                                               c2 = swarm_parameters["c2"])
+                t2 = time.time()
+            elif swarm_parameters["optimizer_number"] == 2: # run the bat algorithm
+                t1 = time.time()
+                optimizer = SwarmPackagePy.ba(n = swarm_parameters["num_agents"], function = cost_eval,
+                                              lb = swarm_parameters["lower_bound"], ub = swarm_parameters["upper_bound"],
+                                              dimension = swarm_parameters["dimension"], iteration = swarm_parameters["num_iterations"], r0 = swarm_parameters["r0"],
+                                              V0 = swarm_parameters["V0"], fmin = swarm_parameters["fmin"], fmax = swarm_parameters["fmax"],
+                                              alpha = swarm_parameters["alpha"], csi = swarm_parameters["csi"])
+                t2 = time.time()
+            elif swarm_parameters["optimizer_number"] == 3: # run the abc algorithm
+                t1 = time.time()
+                optimizer = SwarmPackagePy.aba(n = swarm_parameters["num_agents"], function = cost_eval,
+                                               lb = swarm_parameters["lower_bound"], ub = swarm_parameters["upper_bound"],
+                                               dimension = swarm_parameters["dimension"], iteration = swarm_parameters["num_iterations"])
+                t2 = time.time()
+
+            total_time_of_all_instances += (t2 - t1) # add to the total time
+            solution = optimizer.get_Gbest() # grabs the best solution of the optimizer
+            total_cost += cost_eval(solution = solution) # get the cost for all instances
+            solutions.append(solution)
         
-        output_dict = {
-            "average_time_value": np.mean(time_consumption) * 10**-9,
+        total_cost_of_all_trials += total_cost
+
+        trial_cost = total_cost / n # cost for the particular trial
+
+        # update the minimum cost
+        min_cost, best_pos = update_min_cost_and_solution(trial_cost = trial_cost, best_pos = best_pos, min_cost = min_cost, solution = solutions)
+        
+        total_times_of_all_trials += total_time_of_all_instances # add to total time
+
+    # get the prediction results from surrogate
+    results = best_surrogate_pred(X_test = X_test, best_pos = best_pos)
+
+    # shap values
+
+    # create the output dictionary
+    output_dict = {
+            "average_time_value": total_times_of_all_trials / num_trials,
             "minimum_cost_value": min_cost,
-            "average_cost_value": np.mean(Avg_cost),
-            "explainer_model_prediction": np.array(best_pos).dot(np.array(self.sample).T),
-            "local_fidelity_measure": np.abs(self.model_predict - np.array(best_pos).dot(np.array(self.sample).T)),
-            "contribute": contribute
+            "average_cost_value": total_cost_of_all_trials / num_trials,
+            "explainer_model_prediction": results,
+            "local_fidelity_measure": np.abs((model_pred - results).mean()),
+            "contribute": 0
         }
 
-        return output_dict
 
-    """
-    Interprets
-    best_pos: the best position found
-    Categorical_Auth: (boolean) whether to account for categorical variables or not
+    return output_dict
 
-    """
-    def Interpret(self, best_pos, Categorical_Auth):
-        Contribute = []
-        if Categorical_Auth:
-            begin_feature = self.Categorical['Begin_Categorical'] # int
-            for i in range(begin_feature): # loops from 0 to begin_feature
-                Contribute.append(best_pos[i]) # appends to contribute variable
+"""
+Helpful functions
+"""
+# updates the min_cost and the solution
+def update_min_cost_and_solution(trial_cost, min_cost, best_pos, solution):
+    # updates the lowest cost value of trial
 
-            for i in self.Categorical['Categorical_Index']: # loop through all categorical indices
-                Categorical_var = 0
-                for j in range(begin_feature,begin_feature + i): # loops from begin_feature to begin_feature + i
-                    Categorical_var += best_pos[j] # adds up values in best_pos
-                begin_feature += i # increments begin_feature by i
-                Contribute.append(Categorical_var) # appends summed up positions to contribute
-        else:
-            Contribute = list(best_pos[0:-1]) # just gets everything
-        self.Beta = best_pos[-1]
+    if trial_cost < min_cost:
+        min_cost = trial_cost
+        best_pos = solution
+    
+    return min_cost, best_pos
 
-        # does the negative/positive distinguisher
-        Negative, Positive = self.Neg_Positive_Distinguisher(Contribute)
+# grabs the prediction results
+def best_surrogate_pred(X_test, best_pos):
 
-        return Contribute
+    output = []
 
-    """
-    This function distinguishes between negative and positive values. This is done by checking if the 
-    value is greater than or less than 0
-    """
-    def Neg_Positive_Distinguisher(self, Contribute):
-        Negative = []
-        Positive = []
-        temp_index = 0
+    # change X_test to a numpy array
+    X_test_numpy = X_test.to_numpy()
+    best_pos_numpy = np.asarray(best_pos)
 
-        # store whether contributions are negative or positive
-        for i in Contribute:
-            if i < 0:
-                Negative.append(temp_index)
-            else:
-                Positive.append(temp_index)
-            temp_index += 1
-        return Negative, Positive
+    for i in range(X_test_numpy.shape[0]): # loop through each instance
+        class_raw_label = np.dot(X_test_numpy[i], best_pos_numpy[i])
+        class_label = round(class_raw_label + .5)
+        output.append(class_label)
+
+    return output
+
+# get the shap values
+def get_shap_values(pred, X_test):
+    return None

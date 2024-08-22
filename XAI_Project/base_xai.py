@@ -30,6 +30,7 @@ import coalitional_methods as coal
 import complete_method as cmpl
 
 import helpful_utils.data_tools as data_tools
+import xgboost as xgb
 
 # LIME
 def explanation_values_lime(X, clf, mode, look_at=1, num_samples=5000, silent=False):
@@ -77,8 +78,8 @@ def explanation_values_kernelSHAP(X, clf, n_background_samples=None, look_at=1, 
                                                look_at=look_at)
 
 
-    shap_values = pd.DataFrame(shap_values[look_at],
-                               index=X.columns)
+    # shap_values = pd.DataFrame(shap_values[look_at],
+    #                            index=X.columns)
     
     
     
@@ -190,3 +191,60 @@ def generate_correct_explanation(explanation=None,shap_values=None,base_values=N
                                          feature_names=X.columns.to_list())
 
     return correct_explanation
+
+# special cases functions
+# The two following methods transform the output of a multiclass prediction into a "one versus all" one
+# Used only to compute XGBoost classifier output so that it is comparable to other models output
+    
+def treeSHAP_multi_to_binary_class(X, y, look_at=1):
+    shap_values=[]
+    base_values=[]
+    t0 = time.time()
+    for distinct_class in y.sort_values().unique():
+        y_bin = y.copy()
+        y_bin.loc[y_bin!=distinct_class] = -1 #valeur temporaire
+        y_bin.loc[y_bin==distinct_class] = 1
+        y_bin.loc[y_bin==-1] = 0
+        
+        xgbc_bin = xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", n_jobs=1)
+        xgbc_bin.fit(X, y_bin)
+        explainer = shap.TreeExplainer(xgbc_bin, X, model_output = "probability")
+        shap_values_bin = explainer.shap_values(X)
+        shap_values.append(shap_values_bin)
+        base_values.append(explainer.expected_value)
+    t1 = time.time()
+    
+    shap_values = pd.DataFrame(shap_values[look_at],columns=X.columns)
+    explanation = generate_correct_explanation(shap_values=shap_values,
+                                               base_values=base_values,
+                                               X=X,
+                                               look_at=look_at)
+    
+    return explanation, shap_values, t1-t0
+
+
+def treeSHAPapprox_multi_to_binary_class(X, y, look_at=1):
+    shap_values=[]
+    base_values=[]
+    t0 = time.time()
+    for distinct_class in y.sort_values().unique():
+        y_bin = y.copy()
+        y_bin.loc[y_bin!=distinct_class] = -1 #tmp
+        y_bin.loc[y_bin==distinct_class] = 1
+        y_bin.loc[y_bin==-1] = 0
+        
+        xgbc_bin = xgb.XGBClassifier(use_label_encoder=False, eval_metric="logloss", n_jobs=1)
+        xgbc_bin.fit(X, y_bin)
+        explainer = shap.TreeExplainer(xgbc_bin, data=None)
+        shap_values_bin = explainer.shap_values(X)
+        shap_values.append(shap_values_bin)
+        base_values.append(explainer.expected_value)
+    t1 = time.time()
+    
+    shap_values = pd.DataFrame(shap_values[look_at],columns=X.columns)
+    explanation = generate_correct_explanation(shap_values=shap_values,
+                                               base_values=base_values,
+                                               X=X,
+                                               look_at=look_at)
+    
+    return explanation, shap_values, t1-t0
