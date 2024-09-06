@@ -205,6 +205,7 @@ def run_xai_swarm(X_test, y_test, model, num_trials, swarm_parameters):
         total_times_of_all_trials += total_time_of_all_instances # add to total time
 
     # get the prediction results from surrogate
+    # data_tools.print_generic("best_pos", best_pos)
     results = best_surrogate_pred(X_test = X_test, best_pos = best_pos)
 
     # shap values
@@ -216,7 +217,7 @@ def run_xai_swarm(X_test, y_test, model, num_trials, swarm_parameters):
             "average_cost_value": total_cost_of_all_trials / num_trials,
             "explainer_model_prediction": results,
             "local_fidelity_measure": np.abs((model_pred - results).mean()),
-            "contribute": 0
+            "contribute": best_pos
         }
 
 

@@ -49,11 +49,11 @@ def complete_method_error(n, p, d, exp_influence, comp_influence):
     if not isinstance(exp_influence, np.ndarray) and not isinstance(exp_influence, list):
         exp_influence = exp_influence.to_numpy()
     
+    if isinstance(exp_influence, list):
+        exp_influence = np.array(exp_influence)
+    
     if not isinstance(comp_influence, np.ndarray):
         comp_influence = comp_influence.to_numpy()
-
-    # data_tools.print_generic("exp_influence", exp_influence[0][3])
-    # data_tools.print_and_end(comp_influence[0][3])
 
     # loop through each instance
     for instance_num in range(n): # loop through instances
@@ -77,14 +77,30 @@ Metric 3: Area under curve
 d = number of features
 C = cumulative imoprtance proportion vector
 """
-def auc(d, C):
+def auc(d, exp_influence):
 
-    total = 0
+    if isinstance(exp_influence, pd.DataFrame):
+        exp_influence = exp_influence.to_numpy()
 
-    for feature_num in range(d - 1): # loop through d - 1 features
-        total += (C[feature_num] + C[feature_num + 1])
+    # grab cumulative importance
+    cum_importance_abs = np.abs(exp_influence)
+    cum_importance_mean = np.mean(cum_importance_abs, axis = 0)
+    cum_importance = -np.sort(-cum_importance_mean).cumsum()
 
-    return total / (2 * d)
+    cum_total = cum_importance_mean.sum()
+
+    importance = np.concatenate(([0], (cum_importance / cum_total)), axis = 0)
+
+    # perform trapezoidal integration with dx being 1/(d-1)
+    auc_value = np.trapz(importance, dx = 1 / (len(importance) - 1))
+
+    # for feature_num in range(d - 1): # loop through d - 1 features
+    #     total += (C[feature_num] + C[feature_num + 1])
+
+    return auc_value
+
+
+
 
 """
 Metric 4: Robustness
@@ -180,7 +196,7 @@ def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict):
         computation_time = base_xai_dict[base_xai_name][2] # grabs time consumption
         output_dict["base_xai"][base_xai_name]["mean_per_instance"] = mean_per_instance(computation_time = computation_time, n = n)
 
-        print("\n\n", base_xai_name, "\n\n")
+        # print("\n\n", base_xai_name, "\n\n")
 
         # complete error 
         try:
@@ -189,6 +205,8 @@ def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict):
                                                                                             comp_influence = base_xai_dict["complete"][1]) # grabs the shap values or influences
         except:
             output_dict["base_xai"][base_xai_name]["complete_error"] = None
+
+        output_dict["base_xai"][base_xai_name]["auc"] = auc(d = d, exp_influence = base_xai_dict[base_xai_name][1])
 
 
     # swarm approaches
@@ -202,9 +220,12 @@ def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict):
         output_dict["swarm_xai"][swarm_xai_name]["mean_per_instance"] = mean_per_instance(computation_time = computation_time, n = n)
 
         # complete method
-        output_dict["swarm_xai"][swarm_xai_dict]["complete"] = complete_method_error(n = n, p = d, d = d, 
+        output_dict["swarm_xai"][swarm_xai_name]["complete_error"] = complete_method_error(n = n, p = d, d = d, 
                                                                                     exp_influence = swarm_xai_dict[swarm_xai_name]["contribute"], 
                                                                                     comp_influence = base_xai_dict["complete"][1])
+        
+        # auc
+        output_dict["swarm_xai"][swarm_xai_name]["auc"] = auc(d = d, exp_influence = swarm_xai_dict[swarm_xai_name]["contribute"])
 
 
     return output_dict

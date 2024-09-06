@@ -122,8 +122,8 @@ def experiment_dataset(dataset_id, all_swarm_parameters):
 
     # dictionary in the form: {(string) name of approach: (tuple) (explanation, shap_values, time_consumption)}
     base_xai_dict = base_xai_study(X_preprocessed = X_test, y_preprocessed = y_test, clf = svm_model)
-    # data_tools.print_generic("base_xai_dict[lime]", base_xai_dict["lime"])
-    # data_tools.print_generic("base_xai_dict[complete]", base_xai_dict["complete"][1])
+    # data_tools.print_generic("base_xai_dict[lime]", base_xai_dict["lime"][1].abs().mean().sort_values(ascending = False).cumsum())
+    # data_tools.print_generic("base_xai_dict[lime] total", base_xai_dict["lime"][1].abs().mean())
 
     ##########
     #   Step 4: 
@@ -133,18 +133,17 @@ def experiment_dataset(dataset_id, all_swarm_parameters):
     # swarm_xai.run_swarm_approach(X_test = X_test, y_test = y_test, num_trials = 10)
 
     swarm_xai_dict = swarm_xai_study(X_test = X_test, y_test = y_test, model = svm_model, num_trials = 10, all_swarm_parameters = all_swarm_parameters)
-    # data_tools.print_generic("svm_model results", svm_model.predict(X_test))
-    data_tools.print_generic("swarm_xai_dict", swarm_xai_dict)
+
 
     # ##########
     # #   Step 5: Get the Metrics of both base and optimized
     # ##########
 
     # # dictionary that stores metrics of base_xai approaches
-    # experiment_results = metrics.calculate_metrics_of_model(X = X_preprocessed, base_xai_dict = base_xai_dict, swarm_xai_dict = swarm_xai_dict)
+    experiment_results = metrics.calculate_metrics_of_model(X = X_test, base_xai_dict = base_xai_dict, swarm_xai_dict = swarm_xai_dict)
 
 
-    # data_tools.print_generic("experiment_results", experiment_results)
+    data_tools.print_generic("experiment_results", experiment_results)
 
 """
 Run all base_xai approaches on a single dataset and single model

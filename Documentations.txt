@@ -27,11 +27,19 @@ Methodology
 3. Run the Swarm XAI Algorithm on all the datasets
 4. Use the 6 metrics
 
+Good Snippets for Referencing from Paper:
+`comparison_local_influence.py`
+	- 341: `test_and_store` function has useful stuff about where things go in the dictionary
+	- 506: function for calculating the metrics 
+	- 667: function for the auc curve
+
 Problems:
 1. the paper does specify the actual datasets used for the experiment
 	- one approach is limit the datasets by date but I am not sure how to do that (BEST)
 		- Best Approach: papers code simply calls the OpenML Library and sets parameters
 			- Will try to do the same thing except sort by dates as well
 	- another and easier approach is to include the more recent datasets as well
+
+
 
 
