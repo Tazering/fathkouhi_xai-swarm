@@ -122,6 +122,7 @@ def experiment_dataset(dataset_id, all_swarm_parameters):
 
     # dictionary in the form: {(string) name of approach: (tuple) (explanation, shap_values, time_consumption)}
     base_xai_dict = base_xai_study(X_preprocessed = X_test, y_preprocessed = y_test, clf = svm_model)
+
     # data_tools.print_generic("base_xai_dict[lime]", base_xai_dict["lime"][1].abs().mean().sort_values(ascending = False).cumsum())
     # data_tools.print_generic("base_xai_dict[lime] total", base_xai_dict["lime"][1].abs().mean())
 

@@ -70,6 +70,14 @@ def explanation_values_kernelSHAP(X, clf, n_background_samples=None, look_at=1, 
     expected_value = explainer.expected_value[look_at]
     shap_values = explainer.shap_values(X, silent=True)
 
+    # convert shap_values array into shap_values of predicted classes
+    adjusted_shap_values = []
+    correct_predictions = clf.predict(X)
+
+    for i in range(len(shap_values)):
+        target_vector = grab_specific_index(shap_values[i], correct_predictions[i])
+        adjusted_shap_values.append(target_vector)
+
     t1 = time.time()
     
     explanation = generate_correct_explanation(shap_values=shap_values[look_at],
@@ -83,7 +91,16 @@ def explanation_values_kernelSHAP(X, clf, n_background_samples=None, look_at=1, 
     
     
     
-    return explanation, shap_values, t1-t0
+    return explanation, adjusted_shap_values, t1-t0
+
+# grabs a particular index of each list of lists
+def grab_specific_index(list_of_list, target):
+    output_list = []
+
+    for i in range(len(list_of_list)):
+        output_list.append(list_of_list[i][target])
+
+    return output_list
 
 # spearman values
 def explanation_values_spearman(X, y, clf, rate, problem_type, complexity=False, fvoid=None, look_at=1, progression_bar=True):

@@ -7,9 +7,12 @@ Some may have more supplemental functions than others.
 import math
 import pandas as pd
 import numpy as np
+from numpy import linalg as LA
 
 import scipy.stats
 import helpful_utils.data_tools as data_tools
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 
 ##################################################################
 #   Methods
@@ -77,7 +80,7 @@ Metric 3: Area under curve
 d = number of features
 C = cumulative imoprtance proportion vector
 """
-def auc(d, exp_influence):
+def auc(exp_influence):
 
     if isinstance(exp_influence, pd.DataFrame):
         exp_influence = exp_influence.to_numpy()
@@ -109,16 +112,37 @@ influences = the influences of the features of a data
 epsilon = threshold for set N
 """
 def robustness(data, influences, epsilon):
-    max = -99999999999
+    max_value = -99999999999
 
-    for feature_num in range(data.shape[0] - 1): # loop through all instances
-        if abs(data[feature_num] - data[feature_num + 1]) <= epsilon: # check that it is within the set of numbers
-            temp_max = np.linalg.norm(influences[feature_num] - influences[feature_num + 1]) / np.linalg.norm(data[feature_num] - data[feature_num + 1]) # run the equation
+    m = data.shape[0] # number of instances
 
-            if temp_max > max: # check for largest values
-                max = temp_max
+    if isinstance(data, pd.DataFrame): # convert to np array if needed
+        data = data.to_numpy()
 
-    return max
+    if isinstance(influences, pd.DataFrame): # convert to np array if needed
+        influences = influences.to_numpy()
+    
+    if isinstance(data, list):
+        data = np.array(data)
+    
+    if isinstance(influences, list):
+        influences = np.array(influences)
+
+    for instance_num in range(m): # loop through instances
+        
+        for second_instance_num in range(m): # loop through instances again
+
+            vector_difference = data[instance_num] - data[second_instance_num] # calculates the difference between two vectors
+            if (instance_num != second_instance_num) and (LA.norm(vector_difference) <= epsilon): # if the value is within the N set
+                instance_to_instance_value = (LA.norm(influences[instance_num] - influences[second_instance_num])) / (LA.norm(vector_difference))
+
+                # update the max value
+                if instance_to_instance_value > max_value:
+                    max_value = instance_to_instance_value
+
+                # print(f"{np_data[second_instance_num]} works with value of {LA.norm(np_data[instance_num] - np_data[second_instance_num])}")
+
+    return max_value
 
 
 """
@@ -127,32 +151,92 @@ data = the original/preprocessed dataset
 explanation = the explanations tensor
 d = the number of features
 """
-def readability(data, explanation, d):
-    total = 0
+def readability(data, explanations):
+    n = data.shape[1] # number of features
 
-    for feature_num in range(d): # loop through each feature
-        total += abs(scipy.stats.spearmanr(data[:, feature_num] - explanation[:, feature_num])) # calculate spearman correlation
+    # convert things to numpy
+    if isinstance(data, pd.DataFrame): 
+        data = data.to_numpy()
+    
+    if isinstance(explanations, pd.DataFrame):
+        explanations = explanations.to_numpy()
+    
+    if isinstance(data, list):
+        data = np.array(data)
+    
+    if isinstance(explanations, list):
+        explanations = np.array(explanations)
 
-    return total / d
+    # calculate the metric
+    spearman_total = 0
+
+    for feature_num in range(n): # loop through features
+        feature_vector = grab_feature_vector(data = data, feature_num = feature_num)
+        explainable_feature_vector = grab_feature_vector(data = explanations, feature_num = feature_num)
+
+        spearman_coefficient = abs(scipy.stats.spearmanr(feature_vector, explainable_feature_vector).statistic)
+        spearman_total += spearman_coefficient
+
+    return spearman_total / n
+
 
 """
 Metric 6: Clusterability 
-dataset = the actual dataset preprocessed
-n = number of instances
-d = number of features
-K = clustering function
-S = evaluation function
 explanations = list of explanations
 """
-def clusterability(dataset, d, K, S, explanations):
-    total = 0
+def clusterability(explanations, num_clusters = 2):
 
-    for feature_num in range(d - 1): # loop through all features
-        total += S(K(explanations[:, feature_num], explanations[:, feature_num + 1])) # summations
+    # convert things to numpy
+    if isinstance(explanations, pd.DataFrame):
+        explanations = explanations.to_numpy()
+
+    if isinstance(explanations, list):
+        explanations = np.array(explanations)
+
+    d = explanations.shape[1] # number of features
+    total = 0
+    
+    # calculate clusterability
+    for feature_num in range(d - 1): # loop through all feature
+        first_feature_vector = grab_feature_vector(data = explanations, feature_num = feature_num)
+        second_feature_vector = grab_feature_vector(data = explanations, feature_num = feature_num + 1)
+
+        coord_pair = np.column_stack((first_feature_vector, second_feature_vector)) # grab the coordinates by stacking the feature vectors
+
+        kmeans = KMeans(n_clusters = num_clusters, n_init = "auto").fit(coord_pair) # run a clustering algorithms: k-means
+
+        score = silhouette_score(coord_pair, kmeans.labels_) # calculate the silhouette score
+
+        total += score # accumulate score
+
+        # data_tools.print_generic("labels", kmeans.labels_)
+        # data_tools.print_generic("first_feature_vector", first_feature_vector)
+        # data_tools.print_generic("second_feature_vector", second_feature_vector)
+        # data_tools.print_generic("coord_pair", coord_pair)
+    
+    # data_tools.print_generic("total", total)
+
+
+
+    # for feature_num in range(d - 1): # loop through all features
+    #     total += S(K(explanations[:, feature_num], explanations[:, feature_num + 1])) # summations
     
     scaling_factor = 2 / (d * (d - 1))
 
     return scaling_factor * total
+
+# grabs a feature vector
+def grab_feature_vector(data, feature_num):
+    feature_vector = []
+
+    m = data.shape[0]
+
+    for instance_num in range(m): # loop through instances
+        datapoint = data[instance_num]
+
+        feature_vector.append(datapoint[feature_num]) # add to feature vector
+
+    return feature_vector
 
 ##################################################################
 #   Functions that are used for the experiment directly
@@ -173,13 +257,14 @@ for either all the base xai approaches or the swarm optimizer approaches.
 @returns:
 
 """
-def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict):
+def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict, epsilon = .3):
     # common variables
     n = X.shape[0] # number of datapoints
     d = X.shape[1] # number of features
     output_dict = {}
     output_dict["base_xai"] = {}
     output_dict["swarm_xai"] = {}
+
 
     # base approaches
     approach_names = ["lime", "complete", "kernelshap", "spearman", "treeshap", "treeshap_approx"]
@@ -196,8 +281,6 @@ def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict):
         computation_time = base_xai_dict[base_xai_name][2] # grabs time consumption
         output_dict["base_xai"][base_xai_name]["mean_per_instance"] = mean_per_instance(computation_time = computation_time, n = n)
 
-        # print("\n\n", base_xai_name, "\n\n")
-
         # complete error 
         try:
             output_dict["base_xai"][base_xai_name]["complete_error"] = complete_method_error(n = n, p = d, d = d, 
@@ -206,7 +289,17 @@ def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict):
         except:
             output_dict["base_xai"][base_xai_name]["complete_error"] = None
 
-        output_dict["base_xai"][base_xai_name]["auc"] = auc(d = d, exp_influence = base_xai_dict[base_xai_name][1])
+        # auc
+        output_dict["base_xai"][base_xai_name]["auc"] = auc(exp_influence = base_xai_dict[base_xai_name][1])
+
+        # robustness
+        # output_dict["base_xai"][base_xai_name]["robustness"] = robustness(data = X, influences = base_xai_dict[base_xai_name][1], epsilon = epsilon)
+
+        # readability
+        output_dict["base_xai"][base_xai_name]["readability"] = readability(data = X, explanations = base_xai_dict[base_xai_name][1])
+
+        # clusterability
+        output_dict["base_xai"][base_xai_name]["clusterability"] = clusterability(explanations = base_xai_dict[base_xai_name][1])
 
 
     # swarm approaches
@@ -225,7 +318,15 @@ def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict):
                                                                                     comp_influence = base_xai_dict["complete"][1])
         
         # auc
-        output_dict["swarm_xai"][swarm_xai_name]["auc"] = auc(d = d, exp_influence = swarm_xai_dict[swarm_xai_name]["contribute"])
+        output_dict["swarm_xai"][swarm_xai_name]["auc"] = auc(exp_influence = swarm_xai_dict[swarm_xai_name]["contribute"])
 
+        # robustness
+        output_dict["swarm_xai"][swarm_xai_name]["robustness"] = robustness(data = X, influences = swarm_xai_dict[swarm_xai_name]["contribute"], epsilon = epsilon)
+
+        # readability
+        output_dict["swarm_xai"][swarm_xai_name]["readability"] = readability(data = X, explanations = swarm_xai_dict[swarm_xai_name]["contribute"])
+
+        # clusterability
+        output_dict["swarm_xai"][swarm_xai_name]["clusterability"] = clusterability(explanations = swarm_xai_dict[swarm_xai_name]["contribute"])
 
     return output_dict
