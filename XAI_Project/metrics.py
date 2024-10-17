@@ -184,7 +184,7 @@ def readability(data, explanations):
 Metric 6: Clusterability 
 explanations = list of explanations
 """
-def clusterability(explanations, num_clusters = 2):
+def clusterability(explanations, num_clusters = 10):
 
     # convert things to numpy
     if isinstance(explanations, pd.DataFrame):
@@ -208,21 +208,10 @@ def clusterability(explanations, num_clusters = 2):
         score = silhouette_score(coord_pair, kmeans.labels_) # calculate the silhouette score
 
         total += score # accumulate score
-
-        # data_tools.print_generic("labels", kmeans.labels_)
-        # data_tools.print_generic("first_feature_vector", first_feature_vector)
-        # data_tools.print_generic("second_feature_vector", second_feature_vector)
-        # data_tools.print_generic("coord_pair", coord_pair)
-    
-    # data_tools.print_generic("total", total)
-
-
-
-    # for feature_num in range(d - 1): # loop through all features
-    #     total += S(K(explanations[:, feature_num], explanations[:, feature_num + 1])) # summations
-    
-    scaling_factor = 2 / (d * (d - 1))
-
+    try:
+        scaling_factor = 2 / (d * (d - 1))
+    except Exception:
+        return -99999
     return scaling_factor * total
 
 # grabs a feature vector
@@ -265,7 +254,6 @@ def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict, epsilon = .3):
     output_dict["base_xai"] = {}
     output_dict["swarm_xai"] = {}
 
-
     # base approaches
     approach_names = ["lime", "complete", "kernelshap", "spearman", "treeshap", "treeshap_approx"]
     for base_xai_name in approach_names: # go through various base_xai algorithms
@@ -279,27 +267,27 @@ def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict, epsilon = .3):
 
         # mean per instance
         computation_time = base_xai_dict[base_xai_name][2] # grabs time consumption
-        output_dict["base_xai"][base_xai_name]["mean_per_instance"] = mean_per_instance(computation_time = computation_time, n = n)
+        output_dict["base_xai"][base_xai_name]["mean_per_instance"] = [mean_per_instance(computation_time = computation_time, n = n)]
 
         # complete error 
         try:
-            output_dict["base_xai"][base_xai_name]["complete_error"] = complete_method_error(n = n, p = d, d = d, 
+            output_dict["base_xai"][base_xai_name]["complete_error"] = [complete_method_error(n = n, p = d, d = d, 
                                                                                             exp_influence = base_xai_dict[base_xai_name][1], 
-                                                                                            comp_influence = base_xai_dict["complete"][1]) # grabs the shap values or influences
+                                                                                            comp_influence = base_xai_dict["complete"][1])] # grabs the shap values or influences
         except:
-            output_dict["base_xai"][base_xai_name]["complete_error"] = None
+            output_dict["base_xai"][base_xai_name]["complete_error"] = []
 
         # auc
-        output_dict["base_xai"][base_xai_name]["auc"] = auc(exp_influence = base_xai_dict[base_xai_name][1])
+        output_dict["base_xai"][base_xai_name]["auc"] = [auc(exp_influence = base_xai_dict[base_xai_name][1])]
 
         # robustness
-        # output_dict["base_xai"][base_xai_name]["robustness"] = robustness(data = X, influences = base_xai_dict[base_xai_name][1], epsilon = epsilon)
+        output_dict["base_xai"][base_xai_name]["robustness"] = [robustness(data = X, influences = base_xai_dict[base_xai_name][1], epsilon = epsilon)]
 
         # readability
-        output_dict["base_xai"][base_xai_name]["readability"] = readability(data = X, explanations = base_xai_dict[base_xai_name][1])
+        output_dict["base_xai"][base_xai_name]["readability"] = [readability(data = X, explanations = base_xai_dict[base_xai_name][1])]
 
         # clusterability
-        output_dict["base_xai"][base_xai_name]["clusterability"] = clusterability(explanations = base_xai_dict[base_xai_name][1])
+        output_dict["base_xai"][base_xai_name]["clusterability"] = [clusterability(explanations = base_xai_dict[base_xai_name][1])]
 
 
     # swarm approaches
@@ -310,23 +298,25 @@ def calculate_metrics_of_model(X, base_xai_dict, swarm_xai_dict, epsilon = .3):
 
         # mean per instance
         computation_time = swarm_xai_dict[swarm_xai_name]["average_time_value"]
-        output_dict["swarm_xai"][swarm_xai_name]["mean_per_instance"] = mean_per_instance(computation_time = computation_time, n = n)
+        output_dict["swarm_xai"][swarm_xai_name]["mean_per_instance"] = [mean_per_instance(computation_time = computation_time, n = n)]
 
         # complete method
-        output_dict["swarm_xai"][swarm_xai_name]["complete_error"] = complete_method_error(n = n, p = d, d = d, 
+        output_dict["swarm_xai"][swarm_xai_name]["complete_error"] = [complete_method_error(n = n, p = d, d = d, 
                                                                                     exp_influence = swarm_xai_dict[swarm_xai_name]["contribute"], 
-                                                                                    comp_influence = base_xai_dict["complete"][1])
+                                                                                    comp_influence = base_xai_dict["complete"][1])]
         
         # auc
-        output_dict["swarm_xai"][swarm_xai_name]["auc"] = auc(exp_influence = swarm_xai_dict[swarm_xai_name]["contribute"])
+        output_dict["swarm_xai"][swarm_xai_name]["auc"] = [auc(exp_influence = swarm_xai_dict[swarm_xai_name]["contribute"])]
 
         # robustness
-        output_dict["swarm_xai"][swarm_xai_name]["robustness"] = robustness(data = X, influences = swarm_xai_dict[swarm_xai_name]["contribute"], epsilon = epsilon)
+        output_dict["swarm_xai"][swarm_xai_name]["robustness"] = [robustness(data = X, influences = swarm_xai_dict[swarm_xai_name]["contribute"], epsilon = epsilon)]
 
         # readability
-        output_dict["swarm_xai"][swarm_xai_name]["readability"] = readability(data = X, explanations = swarm_xai_dict[swarm_xai_name]["contribute"])
+        output_dict["swarm_xai"][swarm_xai_name]["readability"] = [readability(data = X, explanations = swarm_xai_dict[swarm_xai_name]["contribute"])]
 
         # clusterability
-        output_dict["swarm_xai"][swarm_xai_name]["clusterability"] = clusterability(explanations = swarm_xai_dict[swarm_xai_name]["contribute"])
+        output_dict["swarm_xai"][swarm_xai_name]["clusterability"] = [clusterability(explanations = swarm_xai_dict[swarm_xai_name]["contribute"])]
+
+    
 
     return output_dict

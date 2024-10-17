@@ -33,7 +33,7 @@ import helpful_utils.data_tools as data_tools
 import xgboost as xgb
 
 # LIME
-def explanation_values_lime(X, clf, mode, look_at=1, num_samples=5000, silent=False):
+def explanation_values_lime(X, clf, mode, look_at=1, num_samples=100, silent=False):
     t0 = time.time()
 
     explainer = lime_tabular.LimeTabularExplainer(training_data=X.values, mode = mode, feature_names=X.columns)

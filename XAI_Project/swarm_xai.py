@@ -133,18 +133,9 @@ def run_xai_swarm(X_test, y_test, model, num_trials, swarm_parameters):
     total_times_of_all_trials = 0
     best_pos = np.inf
     total_cost_of_all_trials = 0
-    explainer_best_predictions = []
 
     model_pred = model.predict(X_test) # predictions
 
-    # output_dict = {
-    #         "average_time_value": np.mean(time_consumption) * 10**-9,
-    #         "minimum_cost_value": min_cost,
-    #         "average_cost_value": np.mean(Avg_cost),
-    #         "explainer_model_prediction": np.array(best_pos).dot(np.array(self.sample).T),
-    #         "local_fidelity_measure": np.abs(self.model_predict - np.array(best_pos).dot(np.array(self.sample).T)),
-    #         "contribute": contribute
-    #     }
 
     # loop through trials
     for trial in range(num_trials):
@@ -159,11 +150,14 @@ def run_xai_swarm(X_test, y_test, model, num_trials, swarm_parameters):
             t1 = t2 = 0
             sample, sample_list = xai_utils.grab_sample(X_test = X_test, y_test = y_test, sample_number = instance_num) # grabs a sample
 
+
             # objective function
             def explainer_func(solution):
                 return sample_list.T.dot(solution)
 
             def cost_eval(solution):
+                # print(f"\nmodel_pred\n {model_pred}\n")
+                # print(f"\nsolution\n {solution}\n")
                 return (model_pred[instance_num] - explainer_func(solution))**2
 
 
